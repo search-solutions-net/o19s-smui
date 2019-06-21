@@ -330,6 +330,20 @@ It can be used as a basis for extension.
 
 Hint: Remember to give it a `+x` permission for being executable to the application.
 
+### Docker Compose Based Development environment
+
+This approach uses Docker Compose to manage the MySQL, Solr, and Play application:  
+
+```
+docker-compose -f build/developer-environment/docker-compose.yml up
+```
+
+Then, to launch the front end run:
+
+```
+sbt run -Dconfig.file=./build/developer-environment/smui-dev.conf 9000
+```
+
 ### Developing Custom Authentication
 
 #### Authentication Backend

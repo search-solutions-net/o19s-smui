@@ -19,5 +19,3 @@ bin
 .DS_Store
 activator-sbt-*-shim.sbt
 .vagrant
-smui-dev.conf
-smui2solr-dev.sh
