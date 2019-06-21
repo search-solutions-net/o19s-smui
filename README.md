@@ -344,6 +344,13 @@ Then, to launch the front end run:
 sbt run -Dconfig.file=./build/developer-environment/smui-dev.conf 9000
 ```
 
+The first time the SQL tables are created, so after the app starts, you need to manually create your Solr Index
+entry in SMUI and then refresh the page at http://localhost:9000:
+
+```
+INSERT INTO solr_index (id, name, description) VALUES (1, 'core_name1', 'Solr Search Index/Core');
+```
+
 ### Developing Custom Authentication
 
 #### Authentication Backend
