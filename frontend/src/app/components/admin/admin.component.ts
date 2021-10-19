@@ -99,4 +99,13 @@ export class AdminComponent implements OnInit {
       .catch(error => this.showErrorMsg(error));
   }
 
+  // @ts-ignore
+  public openDeleteConfirmModal({ deleteCallback }) {
+    const deferred = this.modalService.open('confirm-delete');
+    deferred.promise.then((isOk: boolean) => {
+      if (isOk) { deleteCallback(); }
+      this.modalService.close('confirm-delete');
+    });
+  }
+
 }
