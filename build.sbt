@@ -1,7 +1,7 @@
 import com.typesafe.sbt.GitBranchPrompt
 
 name := "search-management-ui"
-version := "3.13.0"
+version := "SNAPSHOT"
 
 scalaVersion := "2.12.11"
 
@@ -84,7 +84,7 @@ assemblyMergeStrategy in assembly := {
     oldStrategy(x)
 }
 
-lazy val dockerNamespace = "querqy"
+lazy val dockerNamespace = "o19s"
 lazy val dockerRepo = "smui"
 
 imageNames in docker := {
