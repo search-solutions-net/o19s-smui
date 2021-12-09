@@ -1,26 +1,27 @@
 package controllers
 
 import java.io.{OutputStream, PipedInputStream, PipedOutputStream}
-
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
+
 import javax.inject.Inject
 import play.api.Logging
 import play.api.mvc._
 import play.api.libs.json._
 import play.api.libs.json.Reads._
+
 import java.nio.file.Paths
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
-
 import scala.concurrent.{ExecutionContext, Future}
-import controllers.auth.AuthActionFactory
+import controllers.auth.{AuthActionFactory, UserRequest}
 import models.FeatureToggleModel.FeatureToggleService
 import models._
 import models.config.SmuiVersion
 import models.input.{InputTagId, InputValidator, ListItem, SearchInputId, SearchInputWithRules}
 import models.querqy.QuerqyRulesTxtGenerator
 import models.spellings.{CanonicalSpellingId, CanonicalSpellingValidator, CanonicalSpellingWithAlternatives}
+import org.checkerframework.checker.units.qual.A
 import services.{RulesTxtDeploymentService, RulesTxtImportService}
 
 
@@ -95,8 +96,11 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     Ok(Json.toJson(searchManagementRepository.getDetailedSearchInput(SearchInputId(searchInputId))))
   }
 
+
   def addNewSearchInput(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action).async { request: Request[AnyContent] =>
     Future {
+      val userInfo: Option[String] = lookupUserInfo(request)
+
       val body: AnyContent = request.body
       val jsonBody: Option[JsValue] = body.asJson
 
@@ -107,7 +111,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
 
         InputValidator.validateInputTerm(searchInputTerm) match {
           case Nil => {
-            val searchInputId = searchManagementRepository.addNewSearchInput(SolrIndexId(solrIndexId), searchInputTerm, tags)
+            val searchInputId = searchManagementRepository.addNewSearchInput(SolrIndexId(solrIndexId), searchInputTerm, tags, userInfo)
             Ok(Json.toJson(ApiResult(API_RESULT_OK, "Adding Search Input '" + searchInputTerm + "' successful.", Some(searchInputId))))
           }
           case errors => {
@@ -122,9 +126,12 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
+
+
   def updateSearchInput(searchInputId: String) = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson
+    val userInfo: Option[String] = lookupUserInfo(request)
 
     // Expecting json body
     jsonBody.map { json =>
@@ -139,7 +146,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
               BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, strErrMsg, None)))
             case None => {
               // TODO handle potential conflict between searchInputId and JSON-passed searchInput.id
-              searchManagementRepository.updateSearchInput(searchInput)
+              searchManagementRepository.updateSearchInput(searchInput, userInfo)
               // TODO consider Update returning the updated SearchInput(...) instead of an ApiResult(...)
               Ok(Json.toJson(ApiResult(API_RESULT_OK, "Updating Search Input successful.", Some(SearchInputId(searchInputId)))))
             }
@@ -157,9 +164,10 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def deleteSearchInput(searchInputId: String) = authActionFactory.getAuthenticatedAction(Action).async {
+  def deleteSearchInput(searchInputId: String) = authActionFactory.getAuthenticatedAction(Action).async { request: Request[AnyContent] =>
     Future {
-      searchManagementRepository.deleteSearchInput(searchInputId)
+      val userInfo: Option[String] = lookupUserInfo(request)
+      searchManagementRepository.deleteSearchInput(searchInputId, userInfo)
       Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting Search Input successful", None)))
     }
   }
@@ -172,6 +180,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
 
   def addNewSpelling(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action).async { request: Request[AnyContent] =>
     Future {
+      val userInfo: Option[String] = lookupUserInfo(request)
       val body: AnyContent = request.body
       val jsonBody: Option[JsValue] = body.asJson
 
@@ -179,7 +188,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       optTerm.map { term =>
         CanonicalSpellingValidator.validateNoEmptySpelling(term) match {
           case None => {
-            val canonicalSpelling = searchManagementRepository.addNewCanonicalSpelling(SolrIndexId(solrIndexId), term)
+            val canonicalSpelling = searchManagementRepository.addNewCanonicalSpelling(SolrIndexId(solrIndexId), term, userInfo)
             Ok(Json.toJson(ApiResult(API_RESULT_OK, "Adding new canonical spelling '" + term + "' successful.", Some(canonicalSpelling.id))))
           }
           case Some(error) => {
@@ -200,6 +209,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
   }
 
   def updateSpelling(solrIndexId: String, canonicalSpellingId: String) = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+    val userInfo: Option[String] = lookupUserInfo(request)
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson
 
@@ -210,7 +220,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       val otherSpellings = searchManagementRepository.listAllSpellingsWithAlternatives(SolrIndexId(solrIndexId)).filter(_.id != spellingWithAlternatives.id)
       CanonicalSpellingValidator.validateCanonicalSpellingsAndAlternatives(spellingWithAlternatives, otherSpellings) match {
         case Nil =>
-          searchManagementRepository.updateSpelling(spellingWithAlternatives)
+          searchManagementRepository.updateSpelling(spellingWithAlternatives, userInfo)
           Ok(Json.toJson(ApiResult(API_RESULT_OK, "Updating canonical spelling successful.", Some(CanonicalSpellingId(canonicalSpellingId)))))
         case errors =>
           val msgs = s"Failed to update spelling ${spellingWithAlternatives.term}: " + errors.mkString("\n")
@@ -221,10 +231,10 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating canonical spelling failed. Unexpected body data.", None)))
     }
   }
-
-  def deleteSpelling(canonicalSpellingId: String) = authActionFactory.getAuthenticatedAction(Action).async {
+  def deleteSpelling(canonicalSpellingId: String) = authActionFactory.getAuthenticatedAction(Action).async { request: Request[AnyContent] =>
     Future {
-      searchManagementRepository.deleteSpelling(canonicalSpellingId)
+      val userInfo: Option[String] = lookupUserInfo(request)
+      searchManagementRepository.deleteSpelling(canonicalSpellingId, userInfo)
       Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting canonical spelling with alternatives successful.", None)))
     }
   }
@@ -340,6 +350,13 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       .getOrElse {
         Ok(Json.toJson(ApiResult(API_RESULT_FAIL, "File rules_txt missing in request body.", None)))
       }
+  }
+  private def lookupUserInfo(request: Request[AnyContent]) = {
+    val userInfo: Option[String] = request match {
+      case _: UserRequest[A] => Option(request.asInstanceOf[UserRequest[A]].username)
+      case _ => None
+    }
+    userInfo
   }
 
   /**
