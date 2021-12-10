@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   smui:
-    image: querqy/smui:latest
+    image: o19s/smui:SNAPSHOT
     ports:
       - 9000:9000
     init: true
