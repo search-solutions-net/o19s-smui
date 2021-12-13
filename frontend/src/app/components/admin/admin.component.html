@@ -1,7 +1,7 @@
 <app-smui-admin-rules-collection-create
   (showSuccessMsg)="showSuccessMsg($event)"
   (showErrorMsg)="showErrorMsg($event)"
-  (solrIndicesChange)="solrIndicesChange($event)"  
+  (solrIndicesChange)="solrIndicesChange($event)"
 >
 </app-smui-admin-rules-collection-create>
 
@@ -20,3 +20,17 @@
 >
   <p>Are you sure you want to delete the item?</p>
 </app-smui-confirm-modal>
+
+<app-smui-admin-teams-create
+  (showSuccessMsg)="showSuccessMsg($event)"
+  (showErrorMsg)="showErrorMsg($event)"
+  (teamsChange)="teamsChange()"
+>
+</app-smui-admin-teams-create>
+
+<app-smui-admin-teams-list
+  (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
+  (teamsChange)="teamsChange"
+  [teams]="teams"
+>
+</app-smui-admin-teams-list>
