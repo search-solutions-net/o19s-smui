@@ -67,6 +67,19 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
+  def getSolrIndex(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action).async {
+    Future {
+      Ok(Json.toJson(searchManagementRepository.getSolrIndex(SolrIndexId(solrIndexId))))
+    }
+  }
+
+  def deleteSolrIndex(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action).async {
+    Future {
+      searchManagementRepository.deleteSolrIndex(solrIndexId)
+      Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting Solr Index successful", None)))
+    }
+  }
+
   def downloadAllRulesTxtFiles = authActionFactory.getAuthenticatedAction(Action) { req =>
     Ok.chunked(
       createStreamResultInBackground(
@@ -302,171 +315,13 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def getUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.getUser(userId)))
-  }
-
-  def addUser(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
-    val body: AnyContent = request.body
-    val jsonBody: Option[JsValue] = body.asJson
-    // Expecting json body
-    jsonBody.map { json =>
-      val username = (json \ "username").as[String]
-      val email = (json \ "email").as[String]
-      val password = (json \ "password").as[String]
-      val admin =  (json \ "admin").as[Boolean]
-      val user = searchManagementRepository.addUser(
-        User.create(username = username, email = email, password = password, admin = admin)
-      )
-      Ok(Json.toJson(ApiResult(API_RESULT_OK, "Adding user '" + username + "' successful.", Some(user.id))))
-    }.getOrElse {
-      BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Adding new user failed. Unexpected body data.", None)))
-    }
-  }
-
-  def updateUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
-    val body: AnyContent = request.body
-    val jsonBody: Option[JsValue] = body.asJson
-
-    // Expecting json body
-    jsonBody.map { json =>
-      val user = json.as[User]
-      if (searchManagementRepository.updateUser(user) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "Updating user successful.", Some(UserId(userId)))))
-      } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating user failed. User not found.", None)))
-      }
-    }.getOrElse {
-      BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating user failed. Unexpected body data.", None)))
-    }
-  }
-
-  def deleteUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
+  // I am requiring the solrIndexId because it is more RESTful, but it turns out we don't need it.
+  // Maybe validation some day?
+  def deleteSuggestedSolrField(solrIndexId: String, suggestedFieldId: String) = authActionFactory.getAuthenticatedAction(Action).async { request: Request[AnyContent] =>
     Future {
-      if (searchManagementRepository.deleteUser(userId) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting user successful", None)))
-      } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Deleting user failed. User not found.", None)))
-      }
+      searchManagementRepository.deleteSuggestedSolrField(SuggestedSolrFieldId(suggestedFieldId))
+      Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting Suggested Field successful", None)))
     }
-  }
-
-  def listAllUsers(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.listAllUsers()))
-  }
-
-  def lookupUserByUsername(username: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-      Ok(Json.toJson(searchManagementRepository.lookupUserByUsername(username)))
-  }
-
-  def lookupUserByEmail(email: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-      Ok(Json.toJson(searchManagementRepository.lookupUserByEmail(email)))
-  }
-
-  def lookupUserIdsByTeamId(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-      Ok(Json.toJson(searchManagementRepository.lookupUserIdsByTeamId(teamId)))
-  }
-
-  def getTeam(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.getTeam(teamId)))
-  }
-
-  def addTeam(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
-    val body: AnyContent = request.body
-    val jsonBody: Option[JsValue] = body.asJson
-    // Expecting json body
-    jsonBody.map { json =>
-      val name = (json \ "name").as[String]
-      val team = searchManagementRepository.addTeam(
-        Team.create(name)
-      )
-      Ok(Json.toJson(ApiResult(API_RESULT_OK, "Adding team '" + name + "' successful.", Some(team.id))))
-    }.getOrElse {
-      BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Adding new team failed. Unexpected body data.", None)))
-    }
-  }
-
-  def updateTeam(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
-    val body: AnyContent = request.body
-    val jsonBody: Option[JsValue] = body.asJson
-
-    // Expecting json body
-    jsonBody.map { json =>
-      val team = json.as[Team]
-      if (searchManagementRepository.updateTeam(team) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "Updating team successful.", Some(TeamId(teamId)))))
-      } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating team failed. Team not found.", None)))
-      }
-    }.getOrElse {
-      BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating team failed. Unexpected body data.", None)))
-    }
-  }
-
-  def deleteTeam(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
-    Future {
-      if (searchManagementRepository.deleteTeam(teamId) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting team successful", None)))
-      } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Deleting team failed. Team not found.", None)))
-      }
-    }
-  }
-
-  def listAllTeams(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.listAllTeams()))
-  }
-
-  def lookupTeamIdsByUserId(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.lookupTeamIdsByUserId(userId)))
-  }
-
-  def addUser2Team(userId: String, teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
-    Future {
-      if (searchManagementRepository.addUser2Team(userId, teamId) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "User successfully added to team", None)))
-      } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "User not added to team", None)))
-      }
-    }
-  }
-
-  def deleteUser2Team(userId: String, teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
-    Future {
-      if (searchManagementRepository.deleteUser2Team(userId, teamId) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "User successfully removed from team", None)))
-      } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "User not removed from team", None)))
-      }
-    }
-  }
-
-  def addTeam2SolrIndex(teamId: String, solrIndexId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
-    Future {
-      if (searchManagementRepository.addTeam2SolrIndex(teamId, solrIndexId) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "Team successfully added to solr index", None)))
-      } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Team not added to solr index", None)))
-      }
-    }
-  }
-
-  def deleteTeam2SolrIndex(teamId: String, solrIndexId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
-    Future {
-      if (searchManagementRepository.deleteTeam2SolrIndex(teamId, solrIndexId) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "Team successfully removed from solr-index", None)))
-      } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Team not removed from solr-index", None)))
-      }
-    }
-  }
-
-  def lookupTeamIdsBySolrIndexId(solrIndexId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.lookupTeamIdsBySolrIndexId(solrIndexId)))
-  }
-
-  def lookupSolrIndexIdsByTeamId(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.lookupSolrIndexIdsByTeamId(teamId)))
   }
 
   // TODO consider making method .asynch
