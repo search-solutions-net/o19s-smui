@@ -1,0 +1,21 @@
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Users</h5>
+    <h6 class="card-subtitle mb-2 text-muted">Available Users in SMUI</h6>
+
+    <ul *ngFor="let user of users" class="list-group smui-search-input-list">
+        <li class="list-group-item">
+          {{ user.name }}
+          <span *ngIf="user.admin">(Administrator)</span>
+
+          <button
+            type="button"
+            class="btn btn-danger btn-sm float-right"
+            (click)="deleteUser(user.id, $event)"
+          >
+            <i class="fa fa-minus" aria-hidden="true"></i>
+          </button>
+        </li>
+    </ul>
+  </div>
+</div>

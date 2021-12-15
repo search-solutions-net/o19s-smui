@@ -50,8 +50,7 @@ export class TeamsCreateComponent implements OnInit, OnChanges {
   createTeam( event: Event){
     console.log('In TeamsCreateComponent :: createTeam');
     if (this.name) {
-      this.teamService.createTeam
-        (this.name)
+      this.teamService.createTeam(this.name)
         .then(() => this.teamsChange.emit())
         .then(() => this.showSuccessMsg.emit("Created new Team " + this.name))
         .then(() => this.clearForm())

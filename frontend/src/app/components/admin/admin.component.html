@@ -34,3 +34,17 @@
   [teams]="teams"
 >
 </app-smui-admin-teams-list>
+
+<app-smui-admin-users-create
+  (showSuccessMsg)="showSuccessMsg($event)"
+  (showErrorMsg)="showErrorMsg($event)"
+  (usersChange)="usersChange()"
+>
+</app-smui-admin-users-create>
+
+<app-smui-admin-users-list
+  (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
+  (usersChange)="usersChange"
+  [users]="users"
+>
+</app-smui-admin-users-list>

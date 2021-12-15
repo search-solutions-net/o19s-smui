@@ -10,3 +10,4 @@ export * from './report.model';
 export * from './config.model';
 export * from './feature-toggle.model';
 export * from './team.model';
+export * from './user.model';

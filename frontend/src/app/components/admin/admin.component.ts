@@ -2,12 +2,13 @@ import {Component, OnInit, Input, SimpleChanges} from '@angular/core';
 
 import { ToasterService } from 'angular2-toaster';
 
-import { SolrIndex, Team } from '../../models';
+import { SolrIndex, Team, User } from '../../models';
 
 import {
   SolrService,
   ModalService,
-  TeamService
+  TeamService,
+  UserService
 } from '../../services';
 
 @Component({
@@ -20,26 +21,28 @@ export class AdminComponent implements OnInit {
     private modalService: ModalService,
     private toasterService: ToasterService,
     private solrService: SolrService,
-    private teamService: TeamService
+    private teamService: TeamService,
+    private userService: UserService
+
   ) {
 
   }
 
   solrIndices: SolrIndex[];
   teams: Team[];
+  users: User[];
 
   ngOnInit() {
     console.log('In AdminComponent :: ngOnInit');
     this.solrIndices = this.solrService.solrIndices;
     this.lookupTeams();
-    //this.teamService.listAllTeams()
-     // .then(teams => this.teams = teams);
-    //this.teamService.listAllTeams()
+    this.lookupUsers();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     console.log('In AdminComponent :: ngOnChanges');
     this.lookupTeams();
+    this.lookupUsers();
   }
 
 
@@ -68,20 +71,32 @@ export class AdminComponent implements OnInit {
 
   public teamsChange( ){
     console.log("AdminComponent::teamsChange")
-    //this.teams = this.teamService.listAllTeams();
     this.teamService.listAllTeams().then(teams => this.teams = teams);
+  }
+
+  public usersChange( ){
+    console.log("AdminComponent::usersChange")
+    this.userService.listAllUsers().then(users => this.users = users);
   }
 
   lookupTeams() {
     console.log('In AdminComponent :: lookupTeams');
-
     this.teamService.listAllTeams()
       .then(teams => {
         this.teams = teams;
         console.log("FOUND SOME TEAMS" + teams.length);
       })
       .catch(error => this.showErrorMsg(error));
+  }
 
+  lookupUsers() {
+    console.log('In AdminComponent :: lookupUsers');
+    this.userService.listAllUsers()
+      .then(users => {
+        this.users = users;
+        console.log("FOUND SOME USERS" + users.length);
+      })
+      .catch(error => this.showErrorMsg(error));
   }
 
 }

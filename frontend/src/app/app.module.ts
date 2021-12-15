@@ -38,7 +38,9 @@ import {
   RulesCollectionListComponent,
   RulesCollectionCreateComponent,
   TeamsListComponent,
-  TeamsCreateComponent
+  TeamsCreateComponent,
+  UsersListComponent,
+  UsersCreateComponent
 } from './components/admin';
 import {
   SuggestedFieldsComponent,
@@ -100,7 +102,9 @@ import {
     SuggestedFieldsCreateComponent,
     SuggestedFieldsListComponent,
     TeamsCreateComponent,
-    TeamsListComponent
+    TeamsListComponent,
+    UsersCreateComponent,
+    UsersListComponent
   ],
   providers: [
     CommonsService,
