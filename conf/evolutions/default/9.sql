@@ -9,16 +9,15 @@ create table user (
 	name varchar(50) not null,
 	email varchar(50) not null,
 	password varchar(50) not null,
-    admin int not null,
-    last_update timestamp not null
+  admin int not null,
+  last_update timestamp not null
 );
-create unique index user_username_index on user (username);
 create unique index user_email_index on user (email);
 
 create table team (
 	id varchar(36) not null primary key,
 	name varchar(50) not null,
-    last_update timestamp not null
+  last_update timestamp not null
 );
 create unique index team_name_index on team (name);
 
