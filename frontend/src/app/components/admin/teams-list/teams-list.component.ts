@@ -51,20 +51,18 @@ export class TeamsListComponent implements OnInit, OnChanges {
   listAllTeams() {
     console.log('In TeamsListComponent :: listAllTeams');
     return this.teamService.listAllTeams();
-          //.then(teams => {
-          //  this.teams = teams;
-          //});
   }
 
   deleteTeam(id: string, event: Event) {
     console.log('In TeamsListComponent :: deleteTeam');
-    //event.stopPropagation();
-    //const deleteCallback = () =>
-    //  this.teamService
-    //    .deleteTeam(id)
-    //    .then(() => this.teamService.refreshTeams())
-    //    .catch(error => this.showErrorMsg.emit(error));
+    event.stopPropagation();
+    const deleteCallback = () =>
+      this.teamService
+        .deleteTeam(id)
+        .then(() => this.listAllTeams().then(teams => this.teams = teams))
+        .then(() => this.teamsChange.emit(id))
+        .catch(error => this.showErrorMsg.emit(error));
 
-    //this.openDeleteConfirmModal.emit({ deleteCallback });
+    this.openDeleteConfirmModal.emit({ deleteCallback });
   }
 }

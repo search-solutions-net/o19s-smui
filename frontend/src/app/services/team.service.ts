@@ -45,4 +45,10 @@ export class TeamService {
       .put<ApiResult>(`${this.baseUrl}/${this.teamsApiPath}`, body, httpOptions)
       .toPromise();
   }
+
+  deleteTeam(id: string): Promise<ApiResult> {
+    return this.http
+      .delete<ApiResult>(`${this.baseUrl}/${this.teamsApiPath}/${id}`)
+      .toPromise();
+  }
 }
