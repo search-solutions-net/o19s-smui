@@ -325,7 +325,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
   }
 
   def updateUser(user: User): Int = db.withConnection { implicit connection =>
-    User.update(user.id, user.username, user.email, user.password, user.admin)
+    User.update(user.id, user.name, user.email, user.password, user.admin)
   }
 
   def deleteUser(userId: String): Int = db.withConnection { implicit connection =>
@@ -338,10 +338,6 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
 
   def lookupUserByEmail(email: String): User = db.withConnection { implicit connection =>
     User.getUserByEmail(email)
-  }
-
-  def lookupUserByUsername(username: String): User = db.withConnection { implicit connection =>
-    User.getUserByUsername(username)
   }
 
   def lookupUserIdsByTeamId(teamId: String): List[String] = db.withConnection { implicit connection =>

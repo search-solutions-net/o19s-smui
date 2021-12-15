@@ -149,10 +149,9 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
     sessionTokenOpt
       .flatMap(token => SessionDAO.getSession(token))
       .filter(_.expiration.isAfter(LocalDateTime.now(ZoneOffset.UTC)))
-      .map(_.username)
+      .map(_.email)
       .flatMap(UserDAO.getUser)
   }
 
 
 }
-

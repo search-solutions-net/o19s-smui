@@ -3,6 +3,7 @@ package models
 import anorm.Column.columnToString
 import anorm.SqlParser.get
 import anorm._
+import models.User.NAME
 import play.api.libs.json._
 
 import java.sql.Connection
@@ -16,7 +17,7 @@ object UserId extends IdObject[UserId](new UserId(_))
   * Defines a user
   */
 case class User(id: UserId = UserId(),
-                    username: String,
+                    name: String,
                     email: String,
                     password: String,
                     admin: Boolean = false,
@@ -26,14 +27,14 @@ case class User(id: UserId = UserId(),
 
   def toNamedParameters: Seq[NamedParameter] = Seq(
     ID -> id,
-    USERNAME -> username,
+    NAME -> name,
     EMAIL -> email,
     PASSWORD -> password,
     ADMIN -> (if (admin) 1 else 0),
     LAST_UPDATE -> lastUpdate
   )
 
-  def displayValue: String = username + " (" + email + ")"
+  def displayValue: String = name + " (" + email + ")"
 
 }
 
@@ -42,7 +43,7 @@ object User {
   val TABLE_NAME_USER_2_TEAM = "user_2_team"
 
   val ID = "id"
-  val USERNAME = "username"
+  val NAME = "name"
   val EMAIL = "email"
   val PASSWORD = "password"
   val ADMIN = "admin"
@@ -58,15 +59,15 @@ object User {
     Json.obj("displayValue" -> user.displayValue) ++ defaultWrites.writes(user)
   }
 
-  def create(username: String,
+  def create(name: String,
              email: String,
              password: String,
              admin: Boolean = false): User = {
-    User(UserId(), username, email, password, admin, LocalDateTime.now())
+    User(UserId(), name, email, password, admin, LocalDateTime.now())
   }
 
   val sqlParser: RowParser[User] = get[UserId](s"$TABLE_NAME.$ID") ~
-    get[String](s"$TABLE_NAME.$USERNAME") ~
+    get[String](s"$TABLE_NAME.$NAME") ~
     get[String](s"$TABLE_NAME.$EMAIL") ~
     get[String](s"$TABLE_NAME.$PASSWORD") ~
     get[Int](s"$TABLE_NAME.$ADMIN") ~
@@ -76,8 +77,8 @@ object User {
 
   def insert(newUsers: User*)(implicit connection: Connection): Unit = {
     if (newUsers.nonEmpty) {
-      BatchSql(s"insert into $TABLE_NAME ($ID, $USERNAME, $EMAIL, $PASSWORD, $ADMIN, $LAST_UPDATE) " +
-        s"values ({$ID}, {$USERNAME}, {$EMAIL}, {$PASSWORD}, {$ADMIN}, {$LAST_UPDATE})",
+      BatchSql(s"insert into $TABLE_NAME ($ID, $NAME, $EMAIL, $PASSWORD, $ADMIN, $LAST_UPDATE) " +
+        s"values ({$ID}, {$NAME}, {$EMAIL}, {$PASSWORD}, {$ADMIN}, {$LAST_UPDATE})",
         newUsers.head.toNamedParameters,
         newUsers.tail.map(_.toNamedParameters): _*
       ).execute()
@@ -85,13 +86,13 @@ object User {
   }
 
   def getUser(userId: String)(implicit connection: Connection): User = {
-    SQL"select * from #$TABLE_NAME where id = $userId order by #$USERNAME asc, #$EMAIL asc"
+    SQL"select * from #$TABLE_NAME where id = $userId order by #$NAME asc, #$EMAIL asc"
       .as(sqlParser.*).head
   }
 
   def update(id: UserId, username: String, email: String, password: String, admin: Boolean)(implicit connection: Connection): Int = {
     val adminInt = if (admin) 1 else 0
-    SQL"update #$TABLE_NAME set #$USERNAME = $username, #$EMAIL = $email, #$PASSWORD = $password, #$ADMIN = $adminInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
+    SQL"update #$TABLE_NAME set #$NAME = $username, #$EMAIL = $email, #$PASSWORD = $password, #$ADMIN = $adminInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
   }
 
   def deleteByIds(ids: Seq[UserId])(implicit connection: Connection): Int = {
@@ -103,17 +104,12 @@ object User {
   }
 
   def loadAll()(implicit connection: Connection): Seq[User] = {
-    SQL"select * from #$TABLE_NAME order by #$USERNAME asc, #$EMAIL asc"
+    SQL"select * from #$TABLE_NAME order by #$NAME asc, #$EMAIL asc"
       .as(sqlParser.*)
   }
 
   def getUserByEmail(email: String)(implicit connection: Connection): User = {
-    SQL"select * from #$TABLE_NAME where #$EMAIL = $email order by #$USERNAME asc, #$EMAIL asc"
-      .as(sqlParser.*).head
-  }
-
-  def getUserByUsername(username: String)(implicit connection: Connection): User = {
-    SQL"select * from #$TABLE_NAME where #$USERNAME = $username order by #$USERNAME asc, #$EMAIL asc"
+    SQL"select * from #$TABLE_NAME where #$EMAIL = $email order by #$NAME asc, #$EMAIL asc"
       .as(sqlParser.*).head
   }
 
@@ -139,7 +135,7 @@ object UserDAO {
   // Map username -> User
   //private val users: mutable.Map[String, User] = mutable.Map()
   private val users = mutable.Map(
-    "user@example.com" -> User(username = "Example User", email = "user@example.com", password = "password")
+    "user@example.com" -> User(name = "Example User", email = "user@example.com", password = "password")
   )
 
   def getUser(email: String): Option[User] = {
@@ -153,7 +149,7 @@ object UserDAO {
     if(users.contains(email)) {
       Option.empty
     } else {
-      val user = User(username = name, email = email, password = password)
+      val user = User(name = name, email = email, password = password)
       users.put(email, user)
       Option(user)
     }

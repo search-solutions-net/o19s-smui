@@ -324,14 +324,14 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     val jsonBody: Option[JsValue] = body.asJson
     // Expecting json body
     jsonBody.map { json =>
-      val username = (json \ "username").as[String]
+      val name = (json \ "name").as[String]
       val email = (json \ "email").as[String]
       val password = (json \ "password").as[String]
       val admin =  (json \ "admin").as[Boolean]
       val user = searchManagementRepository.addUser(
-        User.create(username = username, email = email, password = password, admin = admin)
+        User.create(name = name, email = email, password = password, admin = admin)
       )
-      Ok(Json.toJson(ApiResult(API_RESULT_OK, "Adding user '" + username + "' successful.", Some(user.id))))
+      Ok(Json.toJson(ApiResult(API_RESULT_OK, "Adding user '" + name + "' successful.", Some(user.id))))
     }.getOrElse {
       BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Adding new user failed. Unexpected body data.", None)))
     }
@@ -366,10 +366,6 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
 
   def listAllUsers(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
     Ok(Json.toJson(searchManagementRepository.listAllUsers()))
-  }
-
-  def lookupUserByUsername(username: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-      Ok(Json.toJson(searchManagementRepository.lookupUserByUsername(username)))
   }
 
   def lookupUserByEmail(email: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
@@ -489,7 +485,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       searchManagementRepository.deleteSuggestedSolrField(SuggestedSolrFieldId(suggestedFieldId))
       Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting Suggested Field successful", None)))
     }
-  }  
+  }
 
   // TODO consider making method .asynch
   def importFromRulesTxt(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action)(parse.multipartFormData) { request =>

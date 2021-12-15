@@ -6,7 +6,7 @@
 
 create table user (
 	id varchar(36) not null primary key,
-	username varchar(50) not null,
+	name varchar(50) not null,
 	email varchar(50) not null,
 	password varchar(50) not null,
     admin int not null,
