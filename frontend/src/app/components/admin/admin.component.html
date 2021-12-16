@@ -1,16 +1,63 @@
-<app-smui-admin-rules-collection-create
-  (showSuccessMsg)="showSuccessMsg($event)"
-  (showErrorMsg)="showErrorMsg($event)"
-  (solrIndicesChange)="solrIndicesChange($event)"
->
-</app-smui-admin-rules-collection-create>
 
-<app-smui-admin-rules-collection-list
-  (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
-  (solrIndicesChange)="solrIndicesChange($event)"
-  [solrIndices]="solrIndices"
->
-</app-smui-admin-rules-collection-list>
+<ul ngbNav #nav="ngbNav" class="nav-tabs">
+  <li ngbNavItem>
+    <a ngbNavLink>Team Management</a>
+    <ng-template ngbNavContent>
+
+      <app-smui-admin-teams-create
+        (showSuccessMsg)="showSuccessMsg($event)"
+        (showErrorMsg)="showErrorMsg($event)"
+        (teamsChange)="teamsChange()"
+      >
+      </app-smui-admin-teams-create>
+
+      <app-smui-admin-teams-list
+        (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
+        (teamsChange)="teamsChange"
+        [teams]="teams"
+      >
+      </app-smui-admin-teams-list>
+
+    </ng-template>
+  </li>
+  <li ngbNavItem>
+    <a ngbNavLink>User Management</a>
+    <ng-template ngbNavContent>
+      <app-smui-admin-users-create
+        (showSuccessMsg)="showSuccessMsg($event)"
+        (showErrorMsg)="showErrorMsg($event)"
+        (usersChange)="usersChange()"
+      >
+      </app-smui-admin-users-create>
+
+      <app-smui-admin-users-list
+        (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
+        (usersChange)="usersChange"
+        [users]="users"
+      >
+      </app-smui-admin-users-list>
+    </ng-template>
+  </li>
+  <li ngbNavItem>
+    <a ngbNavLink>Rules Collection Management</a>
+    <ng-template ngbNavContent>
+      <app-smui-admin-rules-collection-create
+        (showSuccessMsg)="showSuccessMsg($event)"
+        (showErrorMsg)="showErrorMsg($event)"
+        (solrIndicesChange)="solrIndicesChange($event)"
+      >
+      </app-smui-admin-rules-collection-create>
+
+      <app-smui-admin-rules-collection-list
+        (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
+        (solrIndicesChange)="solrIndicesChange($event)"
+        [solrIndices]="solrIndices"
+      >
+      </app-smui-admin-rules-collection-list>
+    </ng-template>
+  </li>
+</ul>
+<div [ngbNavOutlet]="nav"></div>
 
 <app-smui-confirm-modal
   id="confirm-delete"
@@ -20,31 +67,3 @@
 >
   <p>Are you sure you want to delete the item?</p>
 </app-smui-confirm-modal>
-
-<app-smui-admin-teams-create
-  (showSuccessMsg)="showSuccessMsg($event)"
-  (showErrorMsg)="showErrorMsg($event)"
-  (teamsChange)="teamsChange()"
->
-</app-smui-admin-teams-create>
-
-<app-smui-admin-teams-list
-  (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
-  (teamsChange)="teamsChange"
-  [teams]="teams"
->
-</app-smui-admin-teams-list>
-
-<app-smui-admin-users-create
-  (showSuccessMsg)="showSuccessMsg($event)"
-  (showErrorMsg)="showErrorMsg($event)"
-  (usersChange)="usersChange()"
->
-</app-smui-admin-users-create>
-
-<app-smui-admin-users-list
-  (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
-  (usersChange)="usersChange"
-  [users]="users"
->
-</app-smui-admin-users-list>
