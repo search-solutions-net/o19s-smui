@@ -27,16 +27,6 @@ class UserSpec extends FlatSpec with Matchers with BeforeAndAfterEach with WithI
 
   }
 
-  it should "not allow inserting the same username more than once" in {
-    val user1 = User.create("name10", "email10", "good rule")
-    val user2 = User.create("name10", "email11", "good rule1")
-    db.withConnection { implicit connection =>
-      intercept[JdbcBatchUpdateException] {
-        User.insert(user1, user2)
-      }
-    }
-  }
-
   it should "not allow inserting the same email more than once" in {
     val user1 = User.create("name10", "email10", "good rule")
     val user2 = User.create("name11", "email10", "good rule1")
