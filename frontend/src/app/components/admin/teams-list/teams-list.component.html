@@ -7,6 +7,11 @@
         <li class="list-group-item">
           {{ team.name }}
 
+          <a
+            class="btn btn-primary btn-sm float-right"
+            [routerLink]="['/admin/suggested-fields/', team.id.toUpperCase()]"
+          >Configure</a>
+
           <button
             type="button"
             class="btn btn-danger btn-sm float-right"
