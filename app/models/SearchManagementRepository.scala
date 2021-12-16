@@ -340,10 +340,6 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     User.getUserByEmail(email)
   }
 
-  def lookupUserByUsername(username: String): Option[User] = db.withConnection { implicit connection =>
-    User.getUserByUsername(username)
-  }
-
   def lookupUserIdsByTeamId(teamId: String): List[String] = db.withConnection { implicit connection =>
     User.getUser2Team(teamId, false)
   }
