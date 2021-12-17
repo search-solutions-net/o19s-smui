@@ -17,7 +17,8 @@ object SessionDAO {
 
   def generateToken(tokenData: String): String = {
     val token = s"$tokenData-token-${UUID.randomUUID().toString}"
-    sessions.put(token, Session(token, tokenData, LocalDateTime.now(ZoneOffset.UTC).plusSeconds(30)))
+    // TODO make session expiration timeout configurable
+    sessions.put(token, Session(token, tokenData, LocalDateTime.now(ZoneOffset.UTC).plusMinutes(30)))
 
     token
   }

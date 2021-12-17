@@ -16,12 +16,14 @@ class UsernamePasswordAuthenticatedAction (searchManagementRepository: SearchMan
   logger.debug("In UsernamePasswordAuthenticatedAction")
   val whiteListedGetPathRegexes: Set[String] = Set("^/.*.js$", "^/.*.css$") // Set("/api/v1/featureToggles", "/api/v1/solr-index", "/api/v1/version/latest-info", "/login_or_signup")
 
-  private def redirectToLoginOrSignupPage(): Future[Result] = {
+  private def redirectToLoginOrSignupPage(accept: String): Future[Result] = {
     Future {
-      // Having some challenges overriding the behavior of the main Angular app with the redirect, as the init that
-      // looks up the features and solrs etc runs, preventing the redirect at times.  The 401 DOES work for that
-      //Results.Redirect("/login_or_signup").flashing(("failure" -> "Unknown email/password combo. Double check you have the correct email address and password, or sign up for a new account."))
-      Results.Unauthorized("401 Unauthorized you must either login or signup by visiting /login_or_signup")
+      // html request -> redirect
+      // others (API) -> unauth message
+      if (accept.indexOf("html") > -1)
+        Redirect(routes.FrontendController.login_or_signup()).withNewSession
+      else
+        Results.Unauthorized("{\"action\":\"redirect\",\"params\":\"/login_or_signup\"}")
     }
   }
 
@@ -62,9 +64,7 @@ class UsernamePasswordAuthenticatedAction (searchManagementRepository: SearchMan
         block(request)
       } else {
         logger.info("lets take you to the login_or_signup screen from " + request.path + " (" + sessionTokenOpt + ")")
-        Future(
-          Redirect(routes.FrontendController.login_or_signup()).withNewSession
-        )
+        redirectToLoginOrSignupPage(request.headers.get("Accept").getOrElse(""))
       }
     }
   }
