@@ -81,7 +81,11 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
       userData => {
         logger.info("CAME INTO successFunction for signup")
         Option(searchManagementRepository.addUser(
-          User.create(name = userData.name, email = userData.email, password = userData.password, admin = false)
+          User.create(
+            name = userData.name,
+            email = userData.email,
+            password = userData.password,
+            admin = searchManagementRepository.getUserCount() == 0)    // set first registering user as admin
         ))
           .map(_ => Redirect(routes.FrontendController.index()).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(userData.email))))
           .getOrElse(BadRequest(views.html.login_or_signup(LoginForm.form,SignupForm.form,featureToggleService.getSmuiHeadline)))

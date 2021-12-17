@@ -315,13 +315,17 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     }
   }
 
+  def addUser(user: User): User =  db.withConnection { implicit connection =>
+    User.insert(user)
+    user
+  }
+
   def getUser(userId: String): Option[User] = db.withConnection { implicit connection =>
     User.getUser(userId)
   }
 
-  def addUser(user: User): User =  db.withConnection { implicit connection =>
-    User.insert(user)
-    user
+  def getUserCount(): Int =  db.withConnection { implicit connection =>
+    User.getUserCount()
   }
 
   def updateUser(user: User): Int = db.withConnection { implicit connection =>

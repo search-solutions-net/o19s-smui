@@ -91,6 +91,11 @@ object User {
       .as(sqlParser.*).headOption
   }
 
+  def getUserCount()(implicit connection: Connection): Int = {
+    SQL"select count(*) from #$TABLE_NAME"
+      .as(SqlParser.int(1).single)
+  }
+
   def update(id: UserId, username: String, email: String, password: String, admin: Boolean)(implicit connection: Connection): Int = {
     val adminInt = if (admin) 1 else 0
     SQL"update #$TABLE_NAME set #$NAME = $username, #$EMAIL = $email, #$PASSWORD = $password, #$ADMIN = $adminInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
