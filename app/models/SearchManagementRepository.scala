@@ -1,6 +1,5 @@
 package models
 
-import java.io.FileInputStream
 import java.time.LocalDateTime
 import java.util.{Date, UUID}
 import javax.inject.Inject
@@ -18,20 +17,6 @@ import play.api.Logging
 class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureToggleService, hashService: HashService)(implicit ec: DatabaseExecutionContext) extends Logging {
 
   private val db = dbapi.database("default")
-
-  // On startup, always sync predefined tags with the DB
-  syncPredefinedTagsWithDB()
-
-  private def syncPredefinedTagsWithDB(): Unit = {
-    db.withTransaction { implicit connection =>
-      if (toggleService.isRuleTaggingActive) {
-        for (fileName <- toggleService.predefinedTagsFileName) {
-          val tags = PredefinedTag.fromStream(new FileInputStream(fileName))
-          PredefinedTag.updateInDB(tags)
-        }
-      }
-    }
-  }
 
   /**
     * List all Solr Indeces the SearchInput's can be configured for.
