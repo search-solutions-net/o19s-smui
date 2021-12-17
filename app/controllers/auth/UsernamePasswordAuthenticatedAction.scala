@@ -14,7 +14,7 @@ class UsernamePasswordAuthenticatedAction (searchManagementRepository: SearchMan
   extends ActionBuilderImpl(parser) with Logging {
 
   logger.debug("In UsernamePasswordAuthenticatedAction")
-
+  val whiteListedGetPathRegexes: Set[String] = Set("^/.*.js$", "^/.*.css$") // Set("/api/v1/featureToggles", "/api/v1/solr-index", "/api/v1/version/latest-info", "/login_or_signup")
 
   private def redirectToLoginOrSignupPage(): Future[Result] = {
     Future {
@@ -53,19 +53,18 @@ class UsernamePasswordAuthenticatedAction (searchManagementRepository: SearchMan
   override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
     logger.debug(s":: invokeBlock :: request.path = ${request.path}")
     val sessionTokenOpt = request.session.get("sessionToken")
-    logger.info("invokeBlock for: " + request.path + " (" + sessionTokenOpt + ")")
     if (requestAuthenticated(request.session)) {
-        logger.info("Request authed for: " + request.path + " (token = " + sessionTokenOpt + ")")
+        logger.debug("Request authed for: " + request.path + " (token = " + sessionTokenOpt + ")")
         block(request)
     } else {
-      if(request.path.equals("/")) {
+      if (request.method.equals("GET")
+        && whiteListedGetPathRegexes.toStream.filter(s => request.path.matches(s)).headOption.nonEmpty) {
         block(request)
       } else {
-        logger.info("lets take you to the login screen from " + request.path + " (" + sessionTokenOpt + ")")
-        // TODO return error JSON with authorization violation details, redirect target eventually (instead of empty 401 body)
-        //Results.Unauthorized("401 Unauthorized").withHeaders(("WWW-Authenticate", "Basic realm=SMUI"))
-        //Redirect(routes.FrontendController.login_or_signup)
-        redirectToLoginOrSignupPage()
+        logger.info("lets take you to the login_or_signup screen from " + request.path + " (" + sessionTokenOpt + ")")
+        Future(
+          Redirect(routes.FrontendController.login_or_signup()).withNewSession
+        )
       }
     }
   }

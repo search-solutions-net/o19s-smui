@@ -13,6 +13,7 @@ import play.api.http.HttpErrorHandler
 import play.api.libs.json.{Format, JsValue, Json}
 import play.api.mvc._
 
+import java.sql.BatchUpdateException
 import java.time.{LocalDateTime, ZoneOffset}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -80,15 +81,20 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
       },
       userData => {
         logger.info("CAME INTO successFunction for signup")
-        Option(searchManagementRepository.addUser(
-          User.create(
-            name = userData.name,
-            email = userData.email,
-            password = userData.password,
-            admin = searchManagementRepository.getUserCount() == 0)    // set first registering user as admin
-        ))
-          .map(_ => Redirect(routes.FrontendController.index()).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(userData.email))))
-          .getOrElse(BadRequest(views.html.login_or_signup(LoginForm.form,SignupForm.form,featureToggleService.getSmuiHeadline)))
+        // TODO proper error handling
+        try {
+          Option(searchManagementRepository.addUser(
+            User.create(
+              name = userData.name,
+              email = userData.email,
+              password = userData.password,
+              admin = searchManagementRepository.getUserCount() == 0) // set first registering user as admin
+          ))
+            .map(_ => Redirect(routes.FrontendController.index()).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(userData.email))))
+            .getOrElse(BadRequest(views.html.login_or_signup(LoginForm.form, SignupForm.form, featureToggleService.getSmuiHeadline)))
+        } catch {
+            case e: BatchUpdateException => BadRequest(views.html.login_or_signup(LoginForm.form, SignupForm.form, featureToggleService.getSmuiHeadline))
+        }
       }
     )
   }

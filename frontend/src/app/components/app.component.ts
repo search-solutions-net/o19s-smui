@@ -17,8 +17,6 @@ const toasterOptions = {
 export class AppComponent implements OnInit {
   toasterConfig: ToasterConfig = new ToasterConfig(toasterOptions);
   isInitialized = false;
-  loginRequired = false;
-  loginUrl = null;
   errors: string[] = [];
 
   constructor(
@@ -31,20 +29,12 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     console.log('In AppComponent :: ngOnInit');
-    Promise.all([
-      this.initFeatureToggles(),
-      this.initSolarIndices(),
-      this.initVersionInfo()
-    ]).then(() => (this.isInitialized = this.errors.length === 0));
+      Promise.all([
+        this.initFeatureToggles(),
+        this.initSolarIndices(),
+        this.initVersionInfo()
+      ]).then(() => (this.isInitialized = this.errors.length === 0));
   }
-
-  // I am not sure why, with User auth which properly responds with a 303 and a redirect that
-  // when we get to here it's listed as a 200.
-  // error.ok = false, error.name=HttpErrorResponse, error.url=http://localhost:4200/login_or_signup.
-
-  //function checkIfLoginRequired(error: any) {
-//
-  //}
 
   private initFeatureToggles(): Promise<void> {
 
