@@ -100,24 +100,33 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
   }
 
   def login = Action { implicit request: Request[AnyContent] =>
-    LoginForm.form.bindFromRequest.fold(
+    val headline = featureToggleService.getSmuiHeadline
+    val loginForm = LoginForm.form.bindFromRequest
+    loginForm.fold(
       formWithErrors => {
-        BadRequest(views.html.login_or_signup(formWithErrors,SignupForm.form, featureToggleService.getSmuiHeadline))
+        BadRequest(views.html.login_or_signup(formWithErrors, SignupForm.form, headline))
       },
       userData => {
-        getValidLoginUser(userData.email, userData.password)
-          .map(user => Redirect(routes.FrontendController.index()).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(user.email))))
-          .getOrElse(Unauthorized(views.html.defaultpages.unauthorized()))
+        searchManagementRepository.lookupUserByEmail(userData.email).filter(_.password == userData.password)
+          .map(user => processValidLogin(request, user))
+          .getOrElse(
+            BadRequest(
+              views.html.login_or_signup(
+                loginForm.withError("password", "Invalid email / password combination"),
+                SignupForm.form,
+                headline)
+            )
+          )
       }
     )
   }
 
-  def logout() = Action { implicit request: Request[AnyContent] =>
-    Redirect(routes.FrontendController.login_or_signup()).withNewSession
+  private def processValidLogin(request: Request[AnyContent], user: User) = {
+    Redirect(routes.FrontendController.index()).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(user.email)))
   }
 
-  private def getValidLoginUser(email: String, password: String): Option[User] = {
-    searchManagementRepository.lookupUserByEmail(email).filter(_.password == password)
+  def logout() = Action { implicit request: Request[AnyContent] =>
+    Redirect(routes.FrontendController.login_or_signup()).withNewSession
   }
 
   private def withPlayUser[T](block: User => Result): EssentialAction = {
