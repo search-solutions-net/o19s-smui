@@ -50,12 +50,17 @@ object User {
   val USER_ID = "user_id"
   val TEAM_ID = "team_id"
 
+  val ANONYMOUS_USER_ID = "anonymous"
+  val PASSWORD_MASKED = "######"
+
   implicit val jsonReads: Reads[User] = Json.reads[User]
 
   private val defaultWrites: OWrites[User] = Json.writes[User]
   implicit val jsonWrites: OWrites[User] = OWrites[User] { user =>
     Json.obj("displayValue" -> user.displayValue) ++ defaultWrites.writes(user)
   }
+
+  def anonymous(): User = User(UserId(ANONYMOUS_USER_ID), null, null, null, true, LocalDateTime.now())
 
   def create(name: String,
              email: String,
@@ -70,7 +75,7 @@ object User {
     get[String](s"$TABLE_NAME.$PASSWORD") ~
     get[Int](s"$TABLE_NAME.$ADMIN") ~
     get[LocalDateTime](s"$TABLE_NAME.$LAST_UPDATE") map { case id ~ username ~ email ~ password ~ admin ~ lastUpdate =>
-    User(id, username, email, "######", admin > 0, lastUpdate)
+    User(id, username, email, PASSWORD_MASKED, admin > 0, lastUpdate)
   }
 
   def insert(newUsers: User*)(implicit connection: Connection): Option[Int] = {

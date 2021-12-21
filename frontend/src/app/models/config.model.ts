@@ -4,3 +4,10 @@ export class SmuiVersionInfo {
   infoType: string;
   msgHtml: string;
 }
+
+export class UserInfo {
+  id: string;
+  name?: string;
+  email?: string;
+  admin: boolean;
+}

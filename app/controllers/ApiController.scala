@@ -319,8 +319,8 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     Ok(Json.toJson(searchManagementRepository.getUser(userId)))
   }
 
-  def getCurrentUser(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
-      Ok(Json.toJson(authActionFactory.getCurrentUser(request)))
+  def getCurrentUser(): Action[AnyContent] = Action { request: Request[AnyContent] =>
+      Ok(Json.toJson(authActionFactory.getCurrentUser(request).getOrElse(User.anonymous())))
   }
 
   def addUser(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>

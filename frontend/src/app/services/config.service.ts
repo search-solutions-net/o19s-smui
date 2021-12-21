@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { SmuiVersionInfo } from '../models';
+import {SmuiVersionInfo, UserInfo} from '../models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ConfigService {
   versionInfo?: SmuiVersionInfo;
+  userInfo?: UserInfo;
   private readonly baseUrl = 'api/v1';
 
   constructor(private http: HttpClient) { }
@@ -20,4 +21,18 @@ export class ConfigService {
         this.versionInfo = versionInfo;
       });
   }
+
+  getCurrentUserInfo(): Promise<void> {
+    return this.http
+      .get<UserInfo>(this.baseUrl + '/session/user')
+      .toPromise()
+      .then(userInfo => {
+        this.userInfo = userInfo;
+      });
+  }
+
+  isAdminUser(): boolean {
+    return this.userInfo === undefined || this.userInfo.admin
+  }
+
 }

@@ -19,6 +19,7 @@ export class HeaderNavComponent implements OnInit {
   solrIndices: SolrIndex[];
   currentSolrIndexId?: string;
   versionInfo?: SmuiVersionInfo;
+  isAdminUser: boolean;
   deploymentRunningForStage?: string;
   hideDeploymentLogInfo = true;
   deploymentLogInfo = 'Loading info ...';
@@ -39,6 +40,7 @@ export class HeaderNavComponent implements OnInit {
   ngOnInit() {
     this.solrIndices = this.solrService.solrIndices;
     this.versionInfo = this.configService.versionInfo;
+    this.isAdminUser = this.configService.isAdminUser();
     this.currentSolrIndexId = this.solrService.currentSolrIndexId;
     this.solrService.rulesCollectionChangeEventListener().subscribe(info =>{
       console.log("HeaderNav: rulesCollectionChangeEventListener fired");

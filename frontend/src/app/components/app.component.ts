@@ -32,7 +32,8 @@ export class AppComponent implements OnInit {
       Promise.all([
         this.initFeatureToggles(),
         this.initSolarIndices(),
-        this.initVersionInfo()
+        this.initVersionInfo(),
+        this.initUserInfo()
       ]).then(() => (this.isInitialized = this.errors.length === 0));
   }
 
@@ -57,4 +58,11 @@ export class AppComponent implements OnInit {
       this.errors.push('Could not fetch version info from back-end');
     });
   }
+
+  private initUserInfo(): Promise<void> {
+    return this.configService.getCurrentUserInfo().catch(() => {
+      this.errors.push('Could not fetch user info from back-end');
+    });
+  }
+
 }

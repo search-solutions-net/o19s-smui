@@ -5,8 +5,8 @@
 
     <ul *ngFor="let user of users" class="list-group smui-search-input-list">
         <li class="list-group-item">
-          {{ user.name }}
-          <span *ngIf="user.admin">(Administrator)</span>
+          {{ user.email }} - {{ user.name }}
+          <span *ngIf="user.admin"> (Administrator)</span>
 
           <button
             type="button"
