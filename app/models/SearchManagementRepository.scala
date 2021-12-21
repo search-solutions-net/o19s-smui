@@ -340,6 +340,10 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     User.loadAll()
   }
 
+  def isValidEmailPasswordCombo(email: String, password: String): Boolean = db.withConnection { implicit connection =>
+    User.isValidEmailPasswordCombo(email, password)
+  }
+
   def lookupUserByEmail(email: String): Option[User] = db.withConnection { implicit connection =>
     User.getUserByEmail(email)
   }

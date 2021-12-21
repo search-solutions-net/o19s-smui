@@ -319,6 +319,10 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     Ok(Json.toJson(searchManagementRepository.getUser(userId)))
   }
 
+  def getCurrentUser(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+      Ok(Json.toJson(authActionFactory.getCurrentUser(request)))
+  }
+
   def addUser(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson

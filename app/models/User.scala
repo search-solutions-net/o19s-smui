@@ -3,7 +3,6 @@ package models
 import anorm.Column.columnToString
 import anorm.SqlParser.get
 import anorm._
-import models.User.NAME
 import play.api.libs.json._
 
 import java.sql.Connection
@@ -71,7 +70,7 @@ object User {
     get[String](s"$TABLE_NAME.$PASSWORD") ~
     get[Int](s"$TABLE_NAME.$ADMIN") ~
     get[LocalDateTime](s"$TABLE_NAME.$LAST_UPDATE") map { case id ~ username ~ email ~ password ~ admin ~ lastUpdate =>
-    User(id, username, email, password, admin > 0, lastUpdate)
+    User(id, username, email, "######", admin > 0, lastUpdate)
   }
 
   def insert(newUsers: User*)(implicit connection: Connection): Option[Int] = {
@@ -87,7 +86,7 @@ object User {
   }
 
   def getUser(userId: String)(implicit connection: Connection): Option[User] = {
-    SQL"select * from #$TABLE_NAME where id = $userId order by #$NAME asc, #$EMAIL asc"
+    SQL"select * from #$TABLE_NAME where id = $userId"
       .as(sqlParser.*).headOption
   }
 
@@ -110,13 +109,18 @@ object User {
   }
 
   def loadAll()(implicit connection: Connection): Seq[User] = {
-    SQL"select * from #$TABLE_NAME order by #$NAME asc, #$EMAIL asc"
+    SQL"select * from #$TABLE_NAME order by #$EMAIL asc, #$NAME asc"
       .as(sqlParser.*)
   }
 
   def getUserByEmail(email: String)(implicit connection: Connection): Option[User] = {
-    SQL"select * from #$TABLE_NAME where #$EMAIL = $email order by #$NAME asc, #$EMAIL asc"
+    SQL"select * from #$TABLE_NAME where #$EMAIL = $email order by #$NAME asc"
       .as(sqlParser.*).headOption
+  }
+
+  def isValidEmailPasswordCombo(email: String, password: String)(implicit connection: Connection): Boolean = {
+    SQL"select count(*) from #$TABLE_NAME where #$EMAIL = $email and #$PASSWORD=$password"
+      .as(SqlParser.int(1).single) > 0
   }
 
   def getUser2Team(selectId: String, isLeftToRight: Boolean)(implicit connection: Connection): List[String] = {

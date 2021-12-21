@@ -14,16 +14,16 @@ class UsernamePasswordAuthenticatedAction (searchManagementRepository: SearchMan
   extends ActionBuilderImpl(parser) with Logging {
 
   logger.debug("In UsernamePasswordAuthenticatedAction")
-  val whiteListedGetPathRegexes: Set[String] = Set("^/.*.js$", "^/.*.css$") // Set("/api/v1/featureToggles", "/api/v1/solr-index", "/api/v1/version/latest-info", "/login_or_signup")
+  val whiteListedGetPathRegexes: Set[String] = Set("^/.*.js$", "^/.*.css$") // Set("/api/v1/featureToggles", "/api/v1/solr-index", "/api/v1/version/latest-info", "/session")
 
   private def redirectToLoginOrSignupPage(accept: String): Future[Result] = {
     Future {
       // html request -> redirect
       // others (API) -> unauth message
       if (accept.indexOf("html") > -1)
-        Redirect(routes.FrontendController.login_or_signup()).withNewSession
+        Redirect(routes.FrontendController.sessionReset()).withNewSession
       else
-        Results.Unauthorized("{\"action\":\"redirect\",\"params\":\"/login_or_signup\"}")
+        Results.Unauthorized("{\"action\":\"redirect\",\"params\":\"/session_reset\"}")
     }
   }
 
@@ -63,7 +63,7 @@ class UsernamePasswordAuthenticatedAction (searchManagementRepository: SearchMan
         && whiteListedGetPathRegexes.toStream.filter(s => request.path.matches(s)).headOption.nonEmpty) {
         block(request)
       } else {
-        logger.info("lets take you to the login_or_signup screen from " + request.path + " (" + sessionTokenOpt + ")")
+        logger.info("lets take you to the session_reset screen from " + request.path + " (" + sessionTokenOpt + ")")
         redirectToLoginOrSignupPage(request.headers.get("Accept").getOrElse(""))
       }
     }

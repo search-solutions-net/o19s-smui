@@ -1,11 +1,15 @@
 package controllers.auth
 
 import models.SearchManagementRepository
+import models.SessionDAO
+import models.User
 
 import javax.inject.Inject
 import play.api.{Configuration, Logging}
 import play.api.mvc._
 
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import scala.concurrent.ExecutionContext
 
 class AuthActionFactory @Inject()(parser: BodyParsers.Default, searchManagementRepository: SearchManagementRepository, appConfig: Configuration)(implicit ec: ExecutionContext) extends Logging {
@@ -48,6 +52,25 @@ class AuthActionFactory @Inject()(parser: BodyParsers.Default, searchManagementR
       case None =>
         defaultAction
     }
+  }
+
+  def getCurrentUser(request: Request[AnyContent]): Option[User] = {
+    appConfig.getOptional[String]("smui.authAction") match {
+      case Some(strClazz: String) =>
+        if (strClazz.trim().equals("scala.None")) Option.empty
+        else extractUser(request)
+      case None =>
+        Option.empty
+    }
+  }
+
+  def extractUser(req: RequestHeader): Option[User] = {
+    val sessionTokenOpt = req.session.get("sessionToken")
+    sessionTokenOpt
+      .flatMap(token => SessionDAO.getSession(token))
+      .filter(_.expiration.isAfter(LocalDateTime.now(ZoneOffset.UTC)))
+      .map(_.tokenData)
+      .flatMap(searchManagementRepository.lookupUserByEmail)
   }
 
 }

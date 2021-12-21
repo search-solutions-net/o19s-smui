@@ -1,6 +1,5 @@
 package controllers
 
-import controllers.LoginForm.UserData
 import controllers.auth.AuthActionFactory
 import controllers.helpers.UserAction
 import controllers.helpers.UserRequest
@@ -8,13 +7,11 @@ import models.FeatureToggleModel.FeatureToggleService
 import models.SearchManagementRepository
 import models.{FeatureToggleModel, SessionDAO, SolrIndexId, User}
 import play.api.Logging
-import play.api.data.Form
 import play.api.http.HttpErrorHandler
 import play.api.libs.json.{Format, JsValue, Json}
 import play.api.mvc._
 
 import java.sql.BatchUpdateException
-import java.time.{LocalDateTime, ZoneOffset}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,8 +37,8 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
     Ok(views.html.public())
   }
 
-  def login_or_signup(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.login_or_signup(LoginForm.form, SignupForm.form, featureToggleService.getSmuiHeadline))
+  def sessionReset(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    Ok(views.html.session_reset(LoginForm.form, SignupForm.form, featureToggleService.getSmuiHeadline))
   }
 
   def priv(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
@@ -73,15 +70,13 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
   }
 
   def signup() = Action { implicit request: Request[AnyContent] =>
-
-    SignupForm.form.bindFromRequest.fold(
+    val headline = featureToggleService.getSmuiHeadline
+    val signupForm = SignupForm.form.bindFromRequest
+    signupForm.fold(
       formWithErrors => {
-        logger.info("CAME INTO error while signing up")
-        BadRequest(views.html.login_or_signup(LoginForm.form, formWithErrors,featureToggleService.getSmuiHeadline))
+        BadRequest(views.html.session_reset(LoginForm.form, formWithErrors, headline))
       },
       userData => {
-        logger.info("CAME INTO successFunction for signup")
-        // TODO proper error handling
         try {
           Option(searchManagementRepository.addUser(
             User.create(
@@ -90,10 +85,17 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
               password = userData.password,
               admin = searchManagementRepository.getUserCount() == 0) // set first registering user as admin
           ))
-            .map(_ => Redirect(routes.FrontendController.index()).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(userData.email))))
-            .getOrElse(BadRequest(views.html.login_or_signup(LoginForm.form, SignupForm.form, featureToggleService.getSmuiHeadline)))
+            .map(_ => processValidLogin(request, userData.email))
+            .getOrElse(
+              BadRequest(
+                views.html.session_reset(
+                  LoginForm.form,
+                  signupForm.withError("email", "Could not create this user"),
+                  headline)
+              )
+            )
         } catch {
-            case e: BatchUpdateException => BadRequest(views.html.login_or_signup(LoginForm.form, SignupForm.form, featureToggleService.getSmuiHeadline))
+          case e: BatchUpdateException => BadRequest(views.html.session_reset(LoginForm.form, signupForm.withError("email", "Could not create this user"), headline))
         }
       }
     )
@@ -104,50 +106,39 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
     val loginForm = LoginForm.form.bindFromRequest
     loginForm.fold(
       formWithErrors => {
-        BadRequest(views.html.login_or_signup(formWithErrors, SignupForm.form, headline))
+        BadRequest(views.html.session_reset(formWithErrors, SignupForm.form, headline))
       },
       userData => {
-        searchManagementRepository.lookupUserByEmail(userData.email).filter(_.password == userData.password)
-          .map(user => processValidLogin(request, user))
-          .getOrElse(
-            BadRequest(
-              views.html.login_or_signup(
-                loginForm.withError("password", "Invalid email / password combination"),
-                SignupForm.form,
-                headline)
-            )
+        if (searchManagementRepository.isValidEmailPasswordCombo(userData.email, userData.password))
+          processValidLogin(request, userData.email)
+        else
+          BadRequest(
+            views.html.session_reset(
+              loginForm.withError("password", "Invalid email / password combination"),
+              SignupForm.form,
+              headline)
           )
       }
     )
   }
 
-  private def processValidLogin(request: Request[AnyContent], user: User) = {
-    Redirect(routes.FrontendController.index()).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(user.email)))
+  private def processValidLogin(request: Request[AnyContent], email: String) = {
+    Redirect(routes.FrontendController.index()).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(email)))
   }
 
   def logout() = Action { implicit request: Request[AnyContent] =>
-    Redirect(routes.FrontendController.login_or_signup()).withNewSession
+    Redirect(routes.FrontendController.sessionReset()).withNewSession
   }
 
   private def withPlayUser[T](block: User => Result): EssentialAction = {
-    Security.WithAuthentication(extractUser)(user => Action(block(user)))
+    Security.WithAuthentication(authActionFactory.extractUser)(user => Action(block(user)))
   }
 
   private def withUser[T](block: User => Result)(implicit request: Request[AnyContent]): Result = {
-    val user = extractUser(request)
+    val user = authActionFactory.extractUser(request)
     user
       .map(block)
       .getOrElse(Unauthorized(views.html.defaultpages.unauthorized())) // 401, but 404 could be better from a security point of view
   }
-
-  private def extractUser(req: RequestHeader): Option[User] = {
-    val sessionTokenOpt = req.session.get("sessionToken")
-    sessionTokenOpt
-      .flatMap(token => SessionDAO.getSession(token))
-      .filter(_.expiration.isAfter(LocalDateTime.now(ZoneOffset.UTC)))
-      .map(_.tokenData)
-      .flatMap(searchManagementRepository.lookupUserByEmail)
-  }
-
 
 }
