@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import {SmuiVersionInfo, UserInfo} from '../models';
+import {SmuiVersionInfo, AuthInfoModel} from '../models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ConfigService {
   versionInfo?: SmuiVersionInfo;
-  userInfo?: UserInfo;
+  authInfo?: AuthInfoModel;
   private readonly baseUrl = 'api/v1';
 
   constructor(private http: HttpClient) { }
@@ -22,17 +22,25 @@ export class ConfigService {
       });
   }
 
-  getCurrentUserInfo(): Promise<void> {
+  getAuthInfo(): Promise<void> {
     return this.http
-      .get<UserInfo>(this.baseUrl + '/session/user')
+      .get<AuthInfoModel>(this.baseUrl + '/auth-info')
       .toPromise()
-      .then(userInfo => {
-        this.userInfo = userInfo;
+      .then(auth => {
+        this.authInfo = auth;
       });
   }
 
+  isLoginRequired(): boolean {
+    return this.authInfo !== undefined && this.authInfo.isLoginRequired
+  }
+
+  isLoggedIn(): boolean {
+    return  !this.isLoginRequired() || (this.authInfo !== undefined && this.authInfo.isLoggedIn)
+  }
+
   isAdminUser(): boolean {
-    return this.userInfo === undefined || this.userInfo.admin
+    return this.authInfo !== undefined && this.authInfo.currentUser.admin
   }
 
 }

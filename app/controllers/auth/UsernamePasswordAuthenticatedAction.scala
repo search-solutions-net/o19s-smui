@@ -10,7 +10,7 @@ import play.api.mvc._
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
-class UsernamePasswordAuthenticatedAction (searchManagementRepository: SearchManagementRepository, parser: BodyParsers.Default, appConfig: Configuration)(implicit ec: ExecutionContext)
+class UsernamePasswordAuthenticatedAction (adminRequired: Boolean, searchManagementRepository: SearchManagementRepository, parser: BodyParsers.Default, appConfig: Configuration)(implicit ec: ExecutionContext)
   extends ActionBuilderImpl(parser) with Logging {
 
   logger.debug("In UsernamePasswordAuthenticatedAction")
@@ -39,7 +39,7 @@ class UsernamePasswordAuthenticatedAction (searchManagementRepository: SearchMan
 
     user match {
       case None => false
-      case Some(user) => true
+      case Some(user) => (!adminRequired || user.admin)
       case _ => false
     }
   }

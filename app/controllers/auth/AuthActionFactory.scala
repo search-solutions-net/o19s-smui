@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 
 class AuthActionFactory @Inject()(parser: BodyParsers.Default, searchManagementRepository: SearchManagementRepository, appConfig: Configuration)(implicit ec: ExecutionContext) extends Logging {
 
-  private def instantiateAuthAction(strClazz: String, defaultAction: ActionBuilder[Request, AnyContent]): ActionBuilder[Request, AnyContent] = {
+  private def instantiateAuthAction(strClazz: String, adminRequired: Boolean, defaultAction: ActionBuilder[Request, AnyContent]): ActionBuilder[Request, AnyContent] = {
     try {
       // TODO if possible instanciate authenticatedAction only once, not with every controller call
       def instantiate(clazz: java.lang.Class[_])(args: AnyRef*): AnyRef = {
@@ -25,7 +25,7 @@ class AuthActionFactory @Inject()(parser: BodyParsers.Default, searchManagementR
       if (strClazz.equals("controllers.auth.UsernamePasswordAuthenticatedAction")) {
         authenticatedAction = instantiate(
           java.lang.Class.forName(strClazz)
-        )(searchManagementRepository, parser, appConfig, ec)
+        )(Boolean.box(adminRequired), searchManagementRepository, parser, appConfig, ec)
       } else {
         authenticatedAction = instantiate(
           java.lang.Class.forName(strClazz)
@@ -44,11 +44,11 @@ class AuthActionFactory @Inject()(parser: BodyParsers.Default, searchManagementR
     }
   }
 
-  def getAuthenticatedAction(defaultAction: ActionBuilder[Request, AnyContent]): ActionBuilder[Request, AnyContent] = {
+  def getAuthenticatedAction(defaultAction: ActionBuilder[Request, AnyContent], adminRequired: Boolean = false): ActionBuilder[Request, AnyContent] = {
     appConfig.getOptional[String]("smui.authAction") match {
       case Some(strClazz: String) =>
         if (strClazz.trim().equals("scala.None")) defaultAction
-        else instantiateAuthAction(strClazz, defaultAction)
+        else instantiateAuthAction(strClazz, adminRequired, defaultAction)
       case None =>
         defaultAction
     }

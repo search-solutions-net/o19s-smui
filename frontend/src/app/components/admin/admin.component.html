@@ -1,6 +1,6 @@
 
 <ul ngbNav #nav="ngbNav" class="nav-tabs">
-  <li ngbNavItem>
+  <li ngbNavItem *ngIf="isAdminUser">
     <a ngbNavLink>Team Management</a>
     <ng-template ngbNavContent>
 
@@ -20,7 +20,7 @@
 
     </ng-template>
   </li>
-  <li ngbNavItem>
+  <li ngbNavItem *ngIf="isAdminUser">
     <a ngbNavLink>User Management</a>
     <ng-template ngbNavContent>
       <app-smui-admin-users-create
@@ -38,7 +38,7 @@
       </app-smui-admin-users-list>
     </ng-template>
   </li>
-  <li ngbNavItem>
+  <li ngbNavItem *ngIf="isAdminUser">
     <a ngbNavLink>Rules Collection Management</a>
     <ng-template ngbNavContent>
       <app-smui-admin-rules-collection-create
@@ -58,6 +58,9 @@
   </li>
 </ul>
 <div [ngbNavOutlet]="nav"></div>
+<div class="smui-loading-spinner" *ngIf="!isAdminUser">
+  <p class="alert-danger">Only admin users can use this panel!</p>
+</div>
 
 <app-smui-confirm-modal
   id="confirm-delete"

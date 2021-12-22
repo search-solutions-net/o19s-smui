@@ -17,6 +17,7 @@ const toasterOptions = {
 export class AppComponent implements OnInit {
   toasterConfig: ToasterConfig = new ToasterConfig(toasterOptions);
   isInitialized = false;
+  isLoggedIn = false;
   errors: string[] = [];
 
   constructor(
@@ -30,11 +31,21 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     console.log('In AppComponent :: ngOnInit');
       Promise.all([
-        this.initFeatureToggles(),
-        this.initSolarIndices(),
-        this.initVersionInfo(),
-        this.initUserInfo()
-      ]).then(() => (this.isInitialized = this.errors.length === 0));
+        this.initAuthInfo()
+      ]).then(() => {
+        this.isLoggedIn = this.configService.isLoggedIn();
+        console.log('In AppComponent :: ngOnInit :: isLoggedIn = ' + this.configService.isLoggedIn() + ' authInfo = ' + this.configService.authInfo?.currentUser.id);
+        if (this.isLoggedIn) {
+          Promise.all([
+            this.initFeatureToggles(),
+            this.initSolarIndices(),
+            this.initVersionInfo()
+          ]).then(() => {
+            this.isInitialized = this.errors.length === 0;
+          });
+        }
+      });
+
   }
 
   private initFeatureToggles(): Promise<void> {
@@ -59,9 +70,9 @@ export class AppComponent implements OnInit {
     });
   }
 
-  private initUserInfo(): Promise<void> {
-    return this.configService.getCurrentUserInfo().catch(() => {
-      this.errors.push('Could not fetch user info from back-end');
+  private initAuthInfo(): Promise<void> {
+    return this.configService.getAuthInfo().catch(() => {
+      this.errors.push('Could not fetch auth info from back-end');
     });
   }
 

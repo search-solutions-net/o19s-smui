@@ -57,7 +57,7 @@ GET     /api/v1/user/lookup/email/:email                        controllers.ApiC
 GET     /api/v1/user/:userId/team                               controllers.ApiController.lookupTeamIdsByUserId(userId: String)
 PUT     /api/v1/user/:userId/team/:teamId                       controllers.ApiController.addUser2Team(userId: String, teamId: String)
 DELETE  /api/v1/user/:userId/team/:teamId                       controllers.ApiController.deleteUser2Team(userId: String, teamId: String)
-GET     /api/v1/session/user                                    controllers.ApiController.getCurrentUser
+GET     /api/v1/auth-info                                       controllers.ApiController.getAuthInfo
 PUT     /api/v1/team                                            controllers.ApiController.addTeam
 GET     /api/v1/team/:teamId                                    controllers.ApiController.getTeam(teamId: String)
 POST    /api/v1/team/:teamId                                    controllers.ApiController.updateTeam(teamId: String)

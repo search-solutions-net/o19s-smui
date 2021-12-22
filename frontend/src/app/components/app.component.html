@@ -7,6 +7,11 @@
     </ngb-alert>
   </div>
 
+  <div *ngIf="!isLoggedIn">
+    <div class="smui-loading-spinner"></div>
+    <div class="alert-info"><a href="/session_reset">LOGIN REQUIRED: follow /session_reset</a></div>
+  </div>
+
   <div *ngIf="!isInitialized">
     <div class="smui-loading-spinner"></div>
   </div>

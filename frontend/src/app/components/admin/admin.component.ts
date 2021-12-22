@@ -8,7 +8,7 @@ import {
   SolrService,
   ModalService,
   TeamService,
-  UserService
+  UserService, ConfigService
 } from '../../services';
 
 @Component({
@@ -22,18 +22,21 @@ export class AdminComponent implements OnInit {
     private toasterService: ToasterService,
     private solrService: SolrService,
     private teamService: TeamService,
-    private userService: UserService
+    private userService: UserService,
+    private configService: ConfigService
 
   ) {
 
   }
 
+  isAdminUser: boolean;
   solrIndices: SolrIndex[];
   teams: Team[];
   users: User[];
 
   ngOnInit() {
     console.log('In AdminComponent :: ngOnInit');
+    this.isAdminUser = this.configService.isAdminUser();
     this.solrIndices = this.solrService.solrIndices;
     this.lookupTeams();
     this.lookupUsers();

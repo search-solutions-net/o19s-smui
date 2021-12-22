@@ -15,12 +15,14 @@ import java.time.LocalDateTime
 
 import scala.concurrent.{ExecutionContext, Future}
 import controllers.auth.AuthActionFactory
+import controllers.auth.UsernamePasswordAuthenticatedAction
 import models.FeatureToggleModel.FeatureToggleService
 import models._
 import models.config.SmuiVersion
 import models.input.{InputTagId, InputValidator, ListItem, SearchInputId, SearchInputWithRules}
 import models.querqy.QuerqyRulesTxtGenerator
 import models.spellings.{CanonicalSpellingId, CanonicalSpellingValidator, CanonicalSpellingWithAlternatives}
+import play.api.Configuration
 import services.{RulesTxtDeploymentService, RulesTxtImportService}
 
 
@@ -31,7 +33,8 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
                               querqyRulesTxtGenerator: QuerqyRulesTxtGenerator,
                               cc: MessagesControllerComponents,
                               rulesTxtDeploymentService: RulesTxtDeploymentService,
-                              rulesTxtImportService: RulesTxtImportService)(implicit executionContext: ExecutionContext)
+                              rulesTxtImportService: RulesTxtImportService,
+                              appConfig: Configuration)(implicit executionContext: ExecutionContext)
   extends MessagesAbstractController(cc) with Logging {
 
   val API_RESULT_OK = "OK"
@@ -49,7 +52,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     Ok(Json.toJson(searchManagementRepository.listAllSolrIndexes))
   }
 
-  def addNewSolrIndex = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+  def addNewSolrIndex = authActionFactory.getAuthenticatedAction(Action, true) { request: Request[AnyContent] =>
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson
 
@@ -73,7 +76,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def deleteSolrIndex(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action).async {
+  def deleteSolrIndex(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
       searchManagementRepository.deleteSolrIndex(solrIndexId)
       Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting Solr Index successful", None)))
@@ -320,10 +323,34 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
   }
 
   def getCurrentUser(): Action[AnyContent] = Action { request: Request[AnyContent] =>
-      Ok(Json.toJson(authActionFactory.getCurrentUser(request).getOrElse(User.anonymous())))
+    Ok(
+      Json.toJson(
+        authActionFactory.getCurrentUser(request).getOrElse(User.anonymous())
+      )
+    )
   }
 
-  def addUser(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+  def getAuthInfo(): Action[AnyContent] = Action { request: Request[AnyContent] => {
+      val user: User = authActionFactory.getCurrentUser(request).getOrElse(User.anonymous())
+      val teams = searchManagementRepository.lookupTeamIdsByUserId(user.id.id)
+      var solrIndices: List[String] = List()
+      teams.foreach(t => solrIndices ++= searchManagementRepository.lookupSolrIndexIdsByTeamId(t))
+    Ok(
+        Json.toJson(
+          AuthInfo.create(
+            user,
+            teams,
+            solrIndices,
+            authActionFactory.getAuthenticatedAction(Action).isInstanceOf[UsernamePasswordAuthenticatedAction],
+            !User.ANONYMOUS_USER_ID.equals(user.id.id),
+            appConfig.getOptional[String]("smui.authAction").getOrElse("")
+          )
+        )
+      )
+    }
+  }
+
+  def addUser(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) { request: Request[AnyContent] =>
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson
     // Expecting json body
@@ -341,7 +368,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def updateUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+  def updateUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) { request: Request[AnyContent] =>
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson
 
@@ -358,7 +385,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def deleteUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
+  def deleteUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
       if (searchManagementRepository.deleteUser(userId) > 0) {
         Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting user successful", None)))
@@ -368,7 +395,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def listAllUsers(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
+  def listAllUsers(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) {
     Ok(Json.toJson(searchManagementRepository.listAllUsers()))
   }
 
@@ -384,7 +411,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     Ok(Json.toJson(searchManagementRepository.getTeam(teamId)))
   }
 
-  def addTeam(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+  def addTeam(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) { request: Request[AnyContent] =>
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson
     // Expecting json body
@@ -399,7 +426,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def updateTeam(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+  def updateTeam(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) { request: Request[AnyContent] =>
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson
 
@@ -416,7 +443,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def deleteTeam(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
+  def deleteTeam(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
       if (searchManagementRepository.deleteTeam(teamId) > 0) {
         Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting team successful", None)))
@@ -434,7 +461,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     Ok(Json.toJson(searchManagementRepository.lookupTeamIdsByUserId(userId)))
   }
 
-  def addUser2Team(userId: String, teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
+  def addUser2Team(userId: String, teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
       if (searchManagementRepository.addUser2Team(userId, teamId) > 0) {
         Ok(Json.toJson(ApiResult(API_RESULT_OK, "User successfully added to team", None)))
@@ -444,7 +471,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def deleteUser2Team(userId: String, teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
+  def deleteUser2Team(userId: String, teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
       if (searchManagementRepository.deleteUser2Team(userId, teamId) > 0) {
         Ok(Json.toJson(ApiResult(API_RESULT_OK, "User successfully removed from team", None)))
@@ -454,7 +481,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def addTeam2SolrIndex(teamId: String, solrIndexId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
+  def addTeam2SolrIndex(teamId: String, solrIndexId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
       if (searchManagementRepository.addTeam2SolrIndex(teamId, solrIndexId) > 0) {
         Ok(Json.toJson(ApiResult(API_RESULT_OK, "Team successfully added to solr index", None)))
@@ -464,7 +491,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def deleteTeam2SolrIndex(teamId: String, solrIndexId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async {
+  def deleteTeam2SolrIndex(teamId: String, solrIndexId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
       if (searchManagementRepository.deleteTeam2SolrIndex(teamId, solrIndexId) > 0) {
         Ok(Json.toJson(ApiResult(API_RESULT_OK, "Team successfully removed from solr-index", None)))

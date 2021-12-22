@@ -1,3 +1,5 @@
+import {User} from "./user.model";
+
 export class SmuiVersionInfo {
   latestMarketStandard?: string;
   current?: string;
@@ -5,9 +7,11 @@ export class SmuiVersionInfo {
   msgHtml: string;
 }
 
-export class UserInfo {
-  id: string;
-  name?: string;
-  email?: string;
-  admin: boolean;
+export class AuthInfoModel {
+  currentUser: User;
+  teams: String[];
+  solrIndices: String[];
+  isLoginRequired: boolean;
+  isLoggedIn: boolean;
+  authAction: String;
 }
