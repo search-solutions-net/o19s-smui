@@ -9,6 +9,7 @@ const PROXY_CONFIG = {
         && req.headers.accept.indexOf("html") !== -1
         && req.path
         && req.path !== '/session_reset'
+        && req.path !== '/login'
       ) {
         console.log("Skipping proxy for browser request (path: " + req.path + " accept: " + req.headers.accept + ")");
         return "/";
