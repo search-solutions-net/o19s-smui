@@ -39,6 +39,7 @@ import {
   RulesCollectionCreateComponent,
   TeamsListComponent,
   TeamsCreateComponent,
+  TeamsEditComponent,
   UsersListComponent,
   UsersCreateComponent
 } from './components/admin';
@@ -102,6 +103,7 @@ import {
     SuggestedFieldsCreateComponent,
     SuggestedFieldsListComponent,
     TeamsCreateComponent,
+    TeamsEditComponent,
     TeamsListComponent,
     UsersCreateComponent,
     UsersListComponent

@@ -129,8 +129,12 @@ object User {
   }
 
   def getUser2Team(selectId: String, isLeftToRight: Boolean)(implicit connection: Connection): List[String] = {
+
+    println("HERE WE ARE: " + selectId)
     val selectFieldName = if (isLeftToRight) USER_ID else TEAM_ID
     val returnFieldName = if (isLeftToRight) TEAM_ID else USER_ID
+
+    println("isLeftToRight: " + isLeftToRight)
     SQL"select #$returnFieldName from #$TABLE_NAME_USER_2_TEAM where #$selectFieldName=$selectId order by #$returnFieldName asc"
       .asTry(SqlParser.str(1).*).getOrElse(List.empty[String])
   }

@@ -1,0 +1,61 @@
+<div class="card" *ngIf="team">
+  <div class="card-body">
+    <h5 class="card-title">Update Team</h5>
+    <h6 class="card-subtitle mb-2 text-muted">Update a team to manage access to Rules Collections by users</h6>
+
+    <div class="form-group row">
+      <label for="teamName" class="col-sm-2 col-form-label">Team Name</label>
+      <div class="col-sm-10">
+        <input type="text" class="form-control" id="teamName" placeholder="Name of Team" [(ngModel)]="team.name">
+      </div>
+    </div>
+
+    <div class="form-group row">
+      <div class="col-sm-10">
+        <button
+          id="updateTeamBtn"
+          type="button"
+          class="btn btn-primary"
+          (click)="updateTeam( $event)"
+        >
+          Update Team
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Team Membership</h5>
+    <h6 class="card-subtitle mb-2 text-muted">Which users belong to this team?</h6>
+
+    <div class="form-group row">
+
+      <ul class="list-group">
+        <li *ngFor="let user of users" [ngClass]="{'list-group-item': true, 'active': determineIfUserMemberOfTeam(user.id)}">{{ user.name }}</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Rules Collections</h5>
+    <h6 class="card-subtitle mb-2 text-muted">Which rules collections belong to this team?</h6>
+
+    <div class="form-group row">
+
+      <ul class="list-group">
+        <li class="list-group-item active">Cras justo odio</li>
+        <li class="list-group-item">Dapibus ac facilisis in</li>
+        <li class="list-group-item">Morbi leo risus</li>
+        <li class="list-group-item">Porta ac consectetur ac</li>
+        <li class="list-group-item">Vestibulum at eros</li>
+      </ul>
+    </div>
+  </div>
+</div>

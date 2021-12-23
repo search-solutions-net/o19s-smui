@@ -51,4 +51,25 @@ export class TeamService {
       .delete<ApiResult>(`${this.baseUrl}/${this.teamsApiPath}/${id}`)
       .toPromise();
   }
+
+  getTeam(id: string): Promise<Team> {
+    console.log("about to getTeam")
+    return this.http
+      .get<Team>(`${this.baseUrl}/${this.teamsApiPath}/${id}`)
+      .toPromise();
+  }
+
+  updateTeam(team: Team) {
+    const body = JSON.stringify( team);
+    return this.http
+      .post<ApiResult>(`${this.baseUrl}/${this.teamsApiPath}/${team.id}`, body, httpOptions)
+      .toPromise();
+  }
+
+  lookupUserIdsByTeamId(id: string): Promise<Array<string>> {
+    console.log("About to actually call the /user end point for teams")
+    return this.http
+      .get<string[]>(`${this.baseUrl}/${this.teamsApiPath}/${id}/user`)
+      .toPromise();
+  }
 }
