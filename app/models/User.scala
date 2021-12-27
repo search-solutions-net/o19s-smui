@@ -135,6 +135,8 @@ object User {
     val returnFieldName = if (isLeftToRight) TEAM_ID else USER_ID
 
     println("isLeftToRight: " + isLeftToRight)
+    println("returnFieldName: " + returnFieldName)
+    println("selectFieldName: " + selectFieldName)
     SQL"select #$returnFieldName from #$TABLE_NAME_USER_2_TEAM where #$selectFieldName=$selectId order by #$returnFieldName asc"
       .asTry(SqlParser.str(1).*).getOrElse(List.empty[String])
   }
