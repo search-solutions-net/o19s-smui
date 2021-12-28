@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ToasterService } from 'angular2-toaster';
 import {Router} from '@angular/router';
 
-import { DeploymentLogInfo, SmuiVersionInfo, SolrIndex } from '../../models';
+import {AuthInfoModel, DeploymentLogInfo, SmuiVersionInfo, SolrIndex} from '../../models';
 import {
   FeatureToggleService,
   SolrService,
@@ -21,6 +21,7 @@ export class HeaderNavComponent implements OnInit {
   currentSolrIndexId?: string;
   versionInfo?: SmuiVersionInfo;
   isAdminUser: boolean;
+  currentUser: string;
   deploymentRunningForStage?: string;
   hideDeploymentLogInfo = true;
   deploymentLogInfo = 'Loading info ...';
@@ -29,7 +30,7 @@ export class HeaderNavComponent implements OnInit {
     private toasterService: ToasterService,
     public featureToggleService: FeatureToggleService,
     private solrService: SolrService,
-    private configService: ConfigService,
+    public configService: ConfigService,
     public router: Router,
     private userService: UserService,
     public modalService: ModalService
@@ -42,6 +43,7 @@ export class HeaderNavComponent implements OnInit {
   ngOnInit() {
     this.solrIndices = this.solrService.solrIndices;
     this.versionInfo = this.configService.versionInfo;
+    this.currentUser = this.configService.authInfo.currentUser.name;
     this.isAdminUser = this.configService.isAdminUser();
     this.currentSolrIndexId = this.solrService.currentSolrIndexId;
     this.solrService.rulesCollectionChangeEventListener().subscribe(info =>{

@@ -1,9 +1,6 @@
 package controllers.auth
 
-import controllers.Assets.Redirect
-import controllers.routes
 import models.{SearchManagementRepository, SessionDAO}
-import play.api.Logger.logger
 import play.api.{Configuration, Logging}
 import play.api.mvc._
 
@@ -14,7 +11,10 @@ class UsernamePasswordAuthenticatedAction (adminRequired: Boolean, searchManagem
   extends ActionBuilderImpl(parser) with Logging {
 
   logger.debug("In UsernamePasswordAuthenticatedAction")
-  val whiteListedPutPathRegexes: Set[String] = Set("^/api/v1/user$")
+
+  val whiteListedPutPathRegexes: Set[String] = Set(
+    "^/api/v1/user$"                   // user signup
+  )
   val whiteListedGetPathRegexes: Set[String] =
     Set(
       "^/$",
@@ -27,17 +27,6 @@ class UsernamePasswordAuthenticatedAction (adminRequired: Boolean, searchManagem
       "^/.*.ico$",
       "^/.*.css$"
     )
-
-  private def redirectToLoginOrSignupPage(accept: String): Future[Result] = {
-    Future {
-      // html request -> redirect
-      // others (API) -> unauth message
-      if (accept.indexOf("html") > -1)
-        Redirect(routes.FrontendController.sessionReset()).withNewSession
-      else
-        Results.Unauthorized("{\"action\":\"redirect\",\"params\":\"/\"}")
-    }
-  }
 
   def requestAuthenticated(session: Session): Boolean = {
 
@@ -77,7 +66,9 @@ class UsernamePasswordAuthenticatedAction (adminRequired: Boolean, searchManagem
       block(request)
     } else {
       logger.info("lets take you to the session_reset screen from " + request.path + " (" + sessionTokenOpt + ")")
-      redirectToLoginOrSignupPage(request.headers.get("Accept").getOrElse(""))
+      Future {
+        Results.Unauthorized("{\"action\":\"redirect\",\"params\":\"/\"}")
+      }
     }
   }
 }

@@ -55,7 +55,7 @@
         >Report</a
         >
       </li>
-      <li class="nav-item" *ngIf="isAdminUser">
+      <li class="nav-item" *ngIf="isAdminUser || !configService.isLoginRequired()">
         <a
           class="nav-link"
           [ngClass]="{ active: router.url === '/admin' }"
@@ -130,11 +130,11 @@
 
       </div>
     </div>
-
+    <div>&nbsp;</div>
     <div *ngIf="
       featureToggleService.getSimpleLogoutButtonTargetUrl().trim()
         .length > 0
-    "
+    && !configService.isLoginRequired()"
     >
       <button
         type="button"
@@ -142,6 +142,13 @@
         (click)="callSimpleLogoutUrl()"
       >
         Logout
+      </button>
+    </div>
+    <div *ngIf="configService.isLoggedIn() && configService.isLoginRequired()">
+      <button type="button" class="btn btn-outline-secondary"
+        (click)="callSimpleLogoutUrl()"
+      >
+        {{this.currentUser}}&nbsp;<span class=" fa fa-sign-out-alt">&nbsp;</span>
       </button>
     </div>
   </div>

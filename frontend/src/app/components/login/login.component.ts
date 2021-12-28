@@ -13,7 +13,7 @@ import {
 @Component({
   selector: 'app-smui-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
+  styleUrls: ['../header-nav/header-nav.component.css']
 })
 export class LoginComponent implements OnInit {
   versionInfo?: SmuiVersionInfo;

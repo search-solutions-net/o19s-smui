@@ -8,7 +8,7 @@ import {SmuiVersionInfo, AuthInfoModel} from '../models';
 })
 export class ConfigService {
   versionInfo?: SmuiVersionInfo;
-  authInfo?: AuthInfoModel;
+  authInfo: AuthInfoModel;
   private readonly baseUrl = 'api/v1';
 
   constructor(private http: HttpClient) { }

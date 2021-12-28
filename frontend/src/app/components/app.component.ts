@@ -50,12 +50,8 @@ export class AppComponent implements OnInit {
   }
 
   private initFeatureToggles(): Promise<void> {
-
-
-    return this.featureToggleService.getFeatureToggles().catch(error => {
-      console.log("Error:" + error);
+    return this.featureToggleService.getFeatureToggles().catch(() => {
       this.errors.push('Could not fetch app configuration from back-end');
-
     });
   }
 
