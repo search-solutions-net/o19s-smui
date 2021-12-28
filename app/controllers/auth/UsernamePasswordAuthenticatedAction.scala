@@ -14,7 +14,19 @@ class UsernamePasswordAuthenticatedAction (adminRequired: Boolean, searchManagem
   extends ActionBuilderImpl(parser) with Logging {
 
   logger.debug("In UsernamePasswordAuthenticatedAction")
-  val whiteListedGetPathRegexes: Set[String] = Set("^/.*.js$", "^/.*.css$") // Set("/api/v1/featureToggles", "/api/v1/solr-index", "/api/v1/version/latest-info", "/session")
+  val whiteListedPutPathRegexes: Set[String] = Set("^/api/v1/user$")
+  val whiteListedGetPathRegexes: Set[String] =
+    Set(
+      "^/$",
+      "^/api/v1/featureToggles$",
+      "^/api/v1/version/latest-info$",
+      "^/api/v1/solr-index$",
+      "^/api/v1/-1/suggested-solr-field$",
+      "^/api/v1/-1/rules-and-spellings$",
+      "^/.*.js$",
+      "^/.*.ico$",
+      "^/.*.css$"
+    )
 
   private def redirectToLoginOrSignupPage(accept: String): Future[Result] = {
     Future {
@@ -23,7 +35,7 @@ class UsernamePasswordAuthenticatedAction (adminRequired: Boolean, searchManagem
       if (accept.indexOf("html") > -1)
         Redirect(routes.FrontendController.sessionReset()).withNewSession
       else
-        Results.Unauthorized("{\"action\":\"redirect\",\"params\":\"/session_reset\"}")
+        Results.Unauthorized("{\"action\":\"redirect\",\"params\":\"/\"}")
     }
   }
 
@@ -55,17 +67,17 @@ class UsernamePasswordAuthenticatedAction (adminRequired: Boolean, searchManagem
   override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
     logger.debug(s":: invokeBlock :: request.path = ${request.path}")
     val sessionTokenOpt = request.session.get("sessionToken")
-    if (requestAuthenticated(request.session)) {
-        logger.debug("Request authed for: " + request.path + " (token = " + sessionTokenOpt + ")")
-        block(request)
+    if (requestAuthenticated(request.session)
+      || (request.method.equals("GET")
+        && whiteListedGetPathRegexes.toStream.filter(s => request.path.matches(s)).headOption.nonEmpty)
+      || (request.method.equals("PUT")
+        && whiteListedPutPathRegexes.toStream.filter(s => request.path.matches(s)).headOption.nonEmpty)
+        ) {
+      logger.debug("Request authed for: " + request.path + " (token = " + sessionTokenOpt + ")")
+      block(request)
     } else {
-      if (request.method.equals("GET")
-        && whiteListedGetPathRegexes.toStream.filter(s => request.path.matches(s)).headOption.nonEmpty) {
-        block(request)
-      } else {
-        logger.info("lets take you to the session_reset screen from " + request.path + " (" + sessionTokenOpt + ")")
-        redirectToLoginOrSignupPage(request.headers.get("Accept").getOrElse(""))
-      }
+      logger.info("lets take you to the session_reset screen from " + request.path + " (" + sessionTokenOpt + ")")
+      redirectToLoginOrSignupPage(request.headers.get("Accept").getOrElse(""))
     }
   }
 }

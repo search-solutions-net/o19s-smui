@@ -31,17 +31,18 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     console.log('In AppComponent :: ngOnInit');
       Promise.all([
-        this.initAuthInfo()
+        this.initVersionInfo(),
+        this.initFeatureToggles(),
       ]).then(() => {
-        this.isLoggedIn = this.configService.isLoggedIn();
-        console.log('In AppComponent :: ngOnInit :: isLoggedIn = ' + this.configService.isLoggedIn() + ' authInfo = ' + this.configService.authInfo?.currentUser.id);
-        if (this.isLoggedIn) {
+        this.isInitialized = this.errors.length === 0;
+        console.log('In AppComponent :: ngOnInit :: isBackendInitialized = ' + this.isInitialized);
+        if (this.isInitialized) {
           Promise.all([
-            this.initFeatureToggles(),
-            this.initSolarIndices(),
-            this.initVersionInfo()
+            this.initAuthInfo(),
+            this.initSolarIndices()
           ]).then(() => {
-            this.isInitialized = this.errors.length === 0;
+            this.isLoggedIn = this.configService.isLoggedIn();
+            console.log('In AppComponent :: ngOnInit :: isLoggedIn = ' + this.configService.isLoggedIn() + ' authInfo = ' + this.configService.authInfo?.currentUser.id);
           });
         }
       });

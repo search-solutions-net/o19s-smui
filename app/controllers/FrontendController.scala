@@ -29,7 +29,7 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
     implicit val format: Format[User] = Json.format[User]
   }
 
-  def index(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async { request =>
+  def index(): Action[AnyContent] = Action.async { request =>
     assets.at("index.html")(request)
   }
 
@@ -57,7 +57,7 @@ class FrontendController @Inject()(cc: MessagesControllerComponents,
     Future(Ok(views.html.priv2()))
   }
 
-  def assetOrDefault(resource: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action).async { request =>
+  def assetOrDefault(resource: String): Action[AnyContent] = Action.async { request =>
     if (resource.startsWith("api")) {
       errorHandler.onClientError(request, NOT_FOUND, "Not found")
     } else {

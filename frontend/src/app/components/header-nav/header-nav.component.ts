@@ -7,6 +7,7 @@ import {
   FeatureToggleService,
   SolrService,
   ConfigService,
+  UserService,
   ModalService
 } from '../../services';
 
@@ -30,6 +31,7 @@ export class HeaderNavComponent implements OnInit {
     private solrService: SolrService,
     private configService: ConfigService,
     public router: Router,
+    private userService: UserService,
     public modalService: ModalService
   ) {
     this.solrService.currentSolrIndexIdSubject.subscribe(value => {
@@ -101,14 +103,18 @@ export class HeaderNavComponent implements OnInit {
 
   public callSimpleLogoutUrl() {
     console.log('In AppComponent :: callSimpleLogoutUrl');
-    console.log("Logout target:" + this.featureToggleService.getSimpleLogoutButtonTargetUrl());
-    var logoutTargetUrl = this.featureToggleService.getSimpleLogoutButtonTargetUrl();
-    if (logoutTargetUrl.toLowerCase().startsWith("http")){
-      // TODO redirect in a more "Angular-way" to target URL
-      window.location.href = logoutTargetUrl;
-    }
-    else {
-      window.location.pathname = logoutTargetUrl;
+    if (this.configService.isLoggedIn() && this.configService.authInfo?.isLoginRequired) {
+      this.userService.logout();
+    } else {
+      console.log("Logout target:" + this.featureToggleService.getSimpleLogoutButtonTargetUrl());
+      var logoutTargetUrl = this.featureToggleService.getSimpleLogoutButtonTargetUrl();
+      if (logoutTargetUrl.toLowerCase().startsWith("http")){
+        // TODO redirect in a more "Angular-way" to target URL
+        window.location.href = logoutTargetUrl;
+      }
+      else {
+        window.location.pathname = logoutTargetUrl;
+      }
     }
   }
 

@@ -44,6 +44,9 @@ import {
   UsersCreateComponent
 } from './components/admin';
 import {
+  LoginComponent
+} from './components/login';
+import {
   SuggestedFieldsComponent,
   SuggestedFieldsCreateComponent,
   SuggestedFieldsListComponent
@@ -97,6 +100,7 @@ import {
     ReportSettingsBarComponent,
     ReportComponent,
     AdminComponent,
+    LoginComponent,
     RulesCollectionListComponent,
     RulesCollectionCreateComponent,
     SuggestedFieldsComponent,

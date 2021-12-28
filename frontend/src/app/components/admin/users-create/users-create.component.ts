@@ -59,7 +59,7 @@ export class UsersCreateComponent implements OnInit, OnChanges {
     if (this.name && this.email && this.password) {
       this.userService.createUser(this.name, this.email, this.password, this.admin)
         .then(() => this.usersChange.emit())
-        .then(() => this.showSuccessMsg.emit("Created new User " + this.name))
+        .then(() => this.showSuccessMsg.emit("Created new User " + this.email))
         .then(() => this.clearForm())
         .catch(error => this.showErrorMsg.emit(error));
     }

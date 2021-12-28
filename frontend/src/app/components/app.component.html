@@ -7,16 +7,15 @@
     </ngb-alert>
   </div>
 
-  <div *ngIf="!isLoggedIn">
-    <div class="smui-loading-spinner"></div>
-    <div class="alert-info"><a href="/session_reset">LOGIN REQUIRED: follow /session_reset</a></div>
-  </div>
-
   <div *ngIf="!isInitialized">
     <div class="smui-loading-spinner"></div>
   </div>
 
-  <div *ngIf="isInitialized">
+  <div *ngIf="isInitialized && !isLoggedIn">
+    <app-smui-login></app-smui-login>
+  </div>
+
+  <div *ngIf="isLoggedIn">
     <app-smui-header-nav></app-smui-header-nav>
     <router-outlet></router-outlet>
   </div>

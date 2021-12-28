@@ -48,8 +48,20 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     Ok(Json.toJson(featureToggleService.getJsFrontendToggleList))
   }
 
-  def listAllSolrIndeces = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.listAllSolrIndexes))
+  def listAllSolrIndeces = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+    val authInfo: AuthInfo = getAuthInfoInternal(request)
+    val solrIndices: List[SolrIndex] = searchManagementRepository.listAllSolrIndexes
+    // TODO make separate solrindices list for an admin user in rules mgt and in admin
+    if (authInfo.currentUser.admin) {
+      Ok(Json.toJson(solrIndices))
+    } else {
+      val filteredSolrIndices: List[SolrIndex] =
+        solrIndices
+          .toStream
+          .filter(solrIndex => authInfo.solrIndices.contains(solrIndex.id.id))
+          .toList
+      Ok(Json.toJson(filteredSolrIndices))
+    }
   }
 
   def addNewSolrIndex = authActionFactory.getAuthenticatedAction(Action, true) { request: Request[AnyContent] =>
@@ -330,24 +342,47 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     )
   }
 
-  def getAuthInfo(): Action[AnyContent] = Action { request: Request[AnyContent] => {
-      val user: User = authActionFactory.getCurrentUser(request).getOrElse(User.anonymous())
-      val teams = searchManagementRepository.lookupTeamIdsByUserId(user.id.id)
-      var solrIndices: List[String] = List()
-      teams.foreach(t => solrIndices ++= searchManagementRepository.lookupSolrIndexIdsByTeamId(t))
-    Ok(
-        Json.toJson(
-          AuthInfo.create(
-            user,
-            teams,
-            solrIndices,
-            authActionFactory.getAuthenticatedAction(Action).isInstanceOf[UsernamePasswordAuthenticatedAction],
-            !User.ANONYMOUS_USER_ID.equals(user.id.id),
-            appConfig.getOptional[String]("smui.authAction").getOrElse("")
-          )
-        )
+  def login(): Action[AnyContent] = Action { request: Request[AnyContent] => {
+      val body: AnyContent = request.body
+      val jsonBody: Option[JsValue] = body.asJson
+      // Expecting json body
+      jsonBody.map({ json =>
+        val email = (json \ "email").as[String]
+        val password = (json \ "password").as[String]
+        if (searchManagementRepository.isValidEmailPasswordCombo(email, password)) {
+          Ok(Json.toJson(getAuthInfoInternal(request))).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(email)))
+        } else {
+          Unauthorized(Json.toJson(getAuthInfoInternal(request)))
+        }
+      }).getOrElse(
+        Unauthorized(Json.toJson(ApiResult(API_RESULT_FAIL, "Unexpected body data.", None)))
       )
     }
+  }
+
+  def logout(): Action[AnyContent] = Action { request: Request[AnyContent] => {
+      Unauthorized("{\"action\":\"redirect\",\"params\":\"/\"}").withNewSession
+    }
+  }
+
+  def getAuthInfo(): Action[AnyContent] = Action { request: Request[AnyContent] => {
+    Ok(Json.toJson(getAuthInfoInternal(request)))
+    }
+  }
+
+  private def getAuthInfoInternal(request: Request[AnyContent]): AuthInfo = {
+    val user: User = authActionFactory.getCurrentUser(request).getOrElse(User.anonymous())
+    val teams = searchManagementRepository.lookupTeamIdsByUserId(user.id.id)
+    var solrIndices: List[String] = List()
+    teams.foreach(t => solrIndices ++= searchManagementRepository.lookupSolrIndexIdsByTeamId(t))
+    AuthInfo.create(
+      user,
+      teams,
+      solrIndices,
+      authActionFactory.getAuthenticatedAction(Action).isInstanceOf[UsernamePasswordAuthenticatedAction],
+      !User.ANONYMOUS_USER_ID.equals(user.id.id),
+      appConfig.getOptional[String]("smui.authAction").getOrElse("")
+    )
   }
 
   def addUser(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) { request: Request[AnyContent] =>
@@ -359,10 +394,16 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       val email = (json \ "email").as[String]
       val password = (json \ "password").as[String]
       val admin =  (json \ "admin").as[Boolean]
-      val user = searchManagementRepository.addUser(
-        User.create(name = name, email = email, password = password, admin = admin)
-      )
-      Ok(Json.toJson(ApiResult(API_RESULT_OK, "Adding user '" + name + "' successful.", Some(user.id))))
+      try {
+        val user = searchManagementRepository.addUser(
+          User.create(name = name, email = email, password = password, admin = admin)
+        )
+        Ok(Json.toJson(user))
+      } catch {
+        case e: Exception => {
+          BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, e.getMessage(), None)))
+        }
+      }
     }.getOrElse {
       BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Adding new user failed. Unexpected body data.", None)))
     }

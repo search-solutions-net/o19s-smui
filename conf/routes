@@ -58,6 +58,8 @@ GET     /api/v1/user/:userId/team                               controllers.ApiC
 PUT     /api/v1/user/:userId/team/:teamId                       controllers.ApiController.addUser2Team(userId: String, teamId: String)
 DELETE  /api/v1/user/:userId/team/:teamId                       controllers.ApiController.deleteUser2Team(userId: String, teamId: String)
 GET     /api/v1/auth-info                                       controllers.ApiController.getAuthInfo
+POST    /api/v1/auth-login                                      controllers.ApiController.login
+GET     /api/v1/auth-logout                                     controllers.ApiController.logout
 PUT     /api/v1/team                                            controllers.ApiController.addTeam
 GET     /api/v1/team/:teamId                                    controllers.ApiController.getTeam(teamId: String)
 POST    /api/v1/team/:teamId                                    controllers.ApiController.updateTeam(teamId: String)
