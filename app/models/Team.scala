@@ -58,9 +58,9 @@ object Team {
     Team(id, name, lastUpdate)
   }
 
-  def getTeam(teamId: String)(implicit connection: Connection): Team = {
+  def getTeam(teamId: String)(implicit connection: Connection): Option[Team] = {
     SQL"select * from #$TABLE_NAME where id = $teamId order by #$NAME asc"
-      .as(sqlParser.*).head
+      .as(sqlParser.*).headOption
   }
 
   def insert(newTeams: Team*)(implicit connection: Connection): Unit = {

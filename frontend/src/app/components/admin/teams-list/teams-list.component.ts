@@ -22,7 +22,8 @@ import {
 })
 export class TeamsListComponent implements OnInit, OnChanges {
 
-  @Input() teams: Array<Team> = [];
+  @Input() teams: Team[];
+  @Input() solrIndices: SolrIndex[];
 
   @Output() openDeleteConfirmModal: EventEmitter<any> = new EventEmitter();
   @Output() showErrorMsg: EventEmitter<string> = new EventEmitter();
@@ -30,14 +31,7 @@ export class TeamsListComponent implements OnInit, OnChanges {
 
   constructor(
     private teamService: TeamService,
-  ) {
-
-    //this.teams = this.teamService.listAllTeams();
-    //this.listAllTeams().then(teams => this.teams = teams);
-
-  }
-
-  //teams: Team[];
+  ) {}
 
   ngOnInit() {
     console.log('In TeamsListComponent :: ngOnInit');
@@ -46,7 +40,6 @@ export class TeamsListComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     console.log('In TeamsListComponent :: ngOnChanges');
   }
-
 
   listAllTeams() {
     console.log('In TeamsListComponent :: listAllTeams');
@@ -65,4 +58,5 @@ export class TeamsListComponent implements OnInit, OnChanges {
 
     this.openDeleteConfirmModal.emit({ deleteCallback });
   }
+
 }

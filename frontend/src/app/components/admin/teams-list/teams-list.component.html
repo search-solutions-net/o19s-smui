@@ -4,22 +4,22 @@
     <h6 class="card-subtitle mb-2 text-muted">Available Teams in SMUI</h6>
 
     <ul *ngFor="let team of teams" class="list-group smui-search-input-list">
-        <li class="list-group-item">
-          {{ team.name }}
-
-          <a
-            class="btn btn-primary btn-sm float-right"
-            [routerLink]="['/admin/teams/', team.id.toUpperCase()]"
-          >Configure</a>
-
+      <li class="list-group-item smui-list-group-item">
+        {{ team.name }}
+        <div class="float-right">
           <button
             type="button"
-            class="btn btn-danger btn-sm float-right"
+            class="btn btn-danger btn-sm"
             (click)="deleteTeam(team.id, $event)"
           >
             <i class="fa fa-minus" aria-hidden="true"></i>
           </button>
-        </li>
+          &nbsp;
+          <button class="btn btn-primary btn-sm"
+             [routerLink]="['/admin/teams/', team.id]"
+          >Configure</button>
+        </div>
+      </li>
     </ul>
   </div>
 </div>

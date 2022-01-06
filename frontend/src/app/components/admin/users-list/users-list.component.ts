@@ -57,7 +57,6 @@ export class UsersListComponent implements OnInit, OnChanges {
         .then(() => this.listAllUsers().then(users => this.users = users))
         .then(() => this.usersChange.emit(id))
         .catch(error => this.showErrorMsg.emit(error));
-
     this.openDeleteConfirmModal.emit({ deleteCallback });
   }
 }

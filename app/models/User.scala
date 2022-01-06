@@ -95,6 +95,13 @@ object User {
       .as(sqlParser.*).headOption
   }
 
+  def getUsers(ids: Seq[String])(implicit connection: Connection): List[User] = {
+    val isLoadAll = (ids.isEmpty)
+    val idsString = ids.mkString("'","','","'")
+    SQL"select * from #$TABLE_NAME where #$isLoadAll or id in (#$idsString) order by #$EMAIL asc, #$NAME asc"
+      .as(sqlParser.*)
+  }
+
   def getUserCount()(implicit connection: Connection): Int = {
     SQL"select count(*) from #$TABLE_NAME"
       .as(SqlParser.int(1).single)
@@ -113,11 +120,6 @@ object User {
     count
   }
 
-  def loadAll()(implicit connection: Connection): Seq[User] = {
-    SQL"select * from #$TABLE_NAME order by #$EMAIL asc, #$NAME asc"
-      .as(sqlParser.*)
-  }
-
   def getUserByEmail(email: String)(implicit connection: Connection): Option[User] = {
     SQL"select * from #$TABLE_NAME where #$EMAIL = $email order by #$NAME asc"
       .as(sqlParser.*).headOption
@@ -129,14 +131,8 @@ object User {
   }
 
   def getUser2Team(selectId: String, isLeftToRight: Boolean)(implicit connection: Connection): List[String] = {
-
-    println("HERE WE ARE: " + selectId)
     val selectFieldName = if (isLeftToRight) USER_ID else TEAM_ID
     val returnFieldName = if (isLeftToRight) TEAM_ID else USER_ID
-
-    println("isLeftToRight: " + isLeftToRight)
-    println("returnFieldName: " + returnFieldName)
-    println("selectFieldName: " + selectFieldName)
     SQL"select #$returnFieldName from #$TABLE_NAME_USER_2_TEAM where #$selectFieldName=$selectId order by #$returnFieldName asc"
       .asTry(SqlParser.str(1).*).getOrElse(List.empty[String])
   }

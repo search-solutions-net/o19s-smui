@@ -23,7 +23,10 @@ const httpOptions = {
 export class UserService {
 
   private readonly baseUrl = 'api/v1';
-  private readonly usersApiPath: string = 'user';
+  private readonly userApiPath: string = 'user';
+  private readonly teamApiPath: string = 'team';
+  private readonly lookupApiPath: string = 'lookup';
+  private readonly lookupEmailApiPath: string = 'email';
   private readonly loginUrl: string = 'auth-login';
   private readonly logoutUrl: string = 'auth-logout';
   private readonly jsonHeader = new Headers({
@@ -36,20 +39,40 @@ export class UserService {
 
   listAllUsers(): Promise<Array<User>> {
     return this.http
-      .get<User[]>(`${this.baseUrl}/${this.usersApiPath}`)
+      .get<User[]>(`${this.baseUrl}/${this.userApiPath}`)
+      .toPromise();
+  }
+
+  listUsers(ids: string[]): Promise<Array<User>> {
+    var queryParams = 'id=nonexisting'; // ensures selection on ids is active
+    ids.forEach(s => queryParams += '&id=' + s)
+    return this.http
+      .get<User[]>(`${this.baseUrl}/${this.userApiPath}?${queryParams}`)
+      .toPromise();
+  }
+
+  lookupUserByEmail(email: string): Promise<User> {
+    return this.http
+      .get<User>(`${this.baseUrl}/${this.userApiPath}/${this.lookupApiPath}/${this.lookupEmailApiPath}/${email}`)
+      .toPromise();
+  }
+
+  addUserIdToTeam(userId: string, teamId: string) {
+    return this.http
+      .put<ApiResult>(`${this.baseUrl}/${this.userApiPath}/${userId}/${this.teamApiPath}/${teamId}`, "{}", httpOptions)
       .toPromise();
   }
 
   createUser(name: string, email: string, password: string, admin: boolean): Promise<User> {
     const body = JSON.stringify( { name: name, email: email, password: password, admin:admin });
     return this.http
-      .put<User>(`${this.baseUrl}/${this.usersApiPath}`, body, httpOptions)
+      .put<User>(`${this.baseUrl}/${this.userApiPath}`, body, httpOptions)
       .toPromise();
   }
 
   deleteUser(id: string): Promise<ApiResult> {
     return this.http
-      .delete<ApiResult>(`${this.baseUrl}/${this.usersApiPath}/${id}`)
+      .delete<ApiResult>(`${this.baseUrl}/${this.userApiPath}/${id}`)
       .toPromise();
   }
 

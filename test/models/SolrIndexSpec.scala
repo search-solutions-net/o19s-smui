@@ -12,7 +12,7 @@ class SolrIndexSpec extends FlatSpec with Matchers with WithInMemoryDB with Test
       SolrIndex.insert(indexEn)
       SolrIndex.insert(indexDe)
 
-      val solrIndexes = SolrIndex.listAll
+      val solrIndexes = SolrIndex.getSolrIndexes
       solrIndexes.size shouldBe 2
 
     }
@@ -22,7 +22,7 @@ class SolrIndexSpec extends FlatSpec with Matchers with WithInMemoryDB with Test
     db.withConnection { implicit connection =>
       SolrIndex.insert(indexEn)
 
-      var solrIndexes = SolrIndex.listAll
+      var solrIndexes = SolrIndex.getSolrIndexes
       solrIndexes.size shouldBe 1
 
       // now try and do a duplicate!
@@ -34,7 +34,7 @@ class SolrIndexSpec extends FlatSpec with Matchers with WithInMemoryDB with Test
 
       // different solr index
       SolrIndex.insert(indexDe)
-      solrIndexes = SolrIndex.listAll
+      solrIndexes = SolrIndex.getSolrIndexes
       solrIndexes.size shouldBe 2
     }
   }

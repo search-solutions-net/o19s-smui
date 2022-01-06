@@ -23,7 +23,9 @@ const httpOptions = {
 export class TeamService {
 
   private readonly baseUrl = 'api/v1';
-  private readonly teamsApiPath: string = 'team';
+  private readonly teamApiPath: string = 'team';
+  private readonly userApiPath: string = 'user';
+  private readonly solrIndexApiPath: string = 'solr-index';
   private readonly jsonHeader = new Headers({
     'Content-Type': 'application/json'
   });
@@ -34,7 +36,7 @@ export class TeamService {
 
   listAllTeams(): Promise<Array<Team>> {
     return this.http
-      .get<Team[]>(`${this.baseUrl}/${this.teamsApiPath}`)
+      .get<Team[]>(`${this.baseUrl}/${this.teamApiPath}`)
       .toPromise();
   }
 
@@ -42,34 +44,57 @@ export class TeamService {
     const body = JSON.stringify( { name: name });
 
     return this.http
-      .put<ApiResult>(`${this.baseUrl}/${this.teamsApiPath}`, body, httpOptions)
+      .put<ApiResult>(`${this.baseUrl}/${this.teamApiPath}`, body, httpOptions)
       .toPromise();
   }
 
   deleteTeam(id: string): Promise<ApiResult> {
     return this.http
-      .delete<ApiResult>(`${this.baseUrl}/${this.teamsApiPath}/${id}`)
+      .delete<ApiResult>(`${this.baseUrl}/${this.teamApiPath}/${id}`)
       .toPromise();
   }
 
   getTeam(id: string): Promise<Team> {
-    console.log("about to getTeam")
     return this.http
-      .get<Team>(`${this.baseUrl}/${this.teamsApiPath}/${id}`)
+      .get<Team>(`${this.baseUrl}/${this.teamApiPath}/${id}`)
       .toPromise();
   }
 
   updateTeam(team: Team) {
     const body = JSON.stringify( team);
     return this.http
-      .post<ApiResult>(`${this.baseUrl}/${this.teamsApiPath}/${team.id}`, body, httpOptions)
+      .post<ApiResult>(`${this.baseUrl}/${this.teamApiPath}/${team.id}`, body, httpOptions)
+      .toPromise();
+  }
+
+  deleteUserFromTeam(userId: string, teamId: string) {
+    return this.http
+      .delete<string[]>(`${this.baseUrl}/${this.userApiPath}/${userId}/${this.teamApiPath}/${teamId}`)
       .toPromise();
   }
 
   lookupUserIdsByTeamId(id: string): Promise<Array<string>> {
-    console.log("About to actually call the /user end point for teams")
     return this.http
-      .get<string[]>(`${this.baseUrl}/${this.teamsApiPath}/${id}/user`)
+      .get<string[]>(`${this.baseUrl}/${this.teamApiPath}/${id}/${this.userApiPath}`)
       .toPromise();
   }
+
+  deleteSolrIndexFromTeam(solrIndexId: string, teamId: string) {
+    return this.http
+      .delete<string[]>(`${this.baseUrl}/${this.teamApiPath}/${teamId}/${this.solrIndexApiPath}/${solrIndexId}`)
+      .toPromise();
+  }
+
+  lookupSolrIndexIdsByTeamId(id: string): Promise<Array<string>> {
+    return this.http
+      .get<string[]>(`${this.baseUrl}/${this.teamApiPath}/${id}/${this.solrIndexApiPath}`)
+      .toPromise();
+  }
+
+  addSolrIndexToTeam(solrIndexId: string, teamId: string) {
+    return this.http
+      .put<ApiResult>(`${this.baseUrl}/${this.teamApiPath}/${teamId}/${this.solrIndexApiPath}/${solrIndexId}`, "{}", httpOptions)
+      .toPromise();
+  }
+
 }

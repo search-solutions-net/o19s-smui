@@ -37,16 +37,16 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     * List all Solr Indeces the SearchInput's can be configured for.
     */
 
-  def listAllSolrIndexes: List[SolrIndex] = db.withConnection { implicit connection =>
-    SolrIndex.listAll
+  def getSolrIndexes(ids: Seq[String]): List[SolrIndex] = db.withConnection { implicit connection =>
+    SolrIndex.getSolrIndexes(ids)
   }
 
   def getSolrIndexName(solrIndexId: SolrIndexId): String = db.withConnection { implicit connection =>
     SolrIndex.loadNameById(solrIndexId)
   }
 
-  def getSolrIndex(solrIndexId: SolrIndexId): SolrIndex = db.withConnection { implicit connection =>
-    SolrIndex.loadById(solrIndexId)
+  def getSolrIndex(solrIndexId: String): Option[SolrIndex] = db.withConnection { implicit connection =>
+    SolrIndex.getSolrIndexes(Seq(solrIndexId)).headOption
   }
 
   def addNewSolrIndex(newSolrIndex: SolrIndex): SolrIndexId = db.withConnection { implicit connection =>
@@ -320,8 +320,8 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     user
   }
 
-  def getUser(userId: String): Option[User] = db.withConnection { implicit connection =>
-    User.getUser(userId)
+  def getUsers(ids: Seq[String]): List[User] = db.withConnection { implicit connection =>
+    User.getUsers(ids)
   }
 
   def getUserCount(): Int =  db.withConnection { implicit connection =>
@@ -334,10 +334,6 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
 
   def deleteUser(userId: String): Int = db.withConnection { implicit connection =>
     User.deleteByIds(Seq(UserId(userId)))
-  }
-
-  def listAllUsers(): Seq[User] = db.withConnection { implicit connection =>
-    User.loadAll()
   }
 
   def isValidEmailPasswordCombo(email: String, password: String): Boolean = db.withConnection { implicit connection =>
@@ -360,7 +356,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     User.deleteUser2Team(userId, teamId)
   }
 
-  def getTeam(teamId: String): Team = db.withConnection { implicit connection =>
+  def getTeam(teamId: String): Option[Team] = db.withConnection { implicit connection =>
     Team.getTeam(teamId)
   }
 

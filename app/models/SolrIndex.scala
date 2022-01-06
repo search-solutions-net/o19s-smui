@@ -32,24 +32,21 @@ object SolrIndex {
   /**
     * List all Solr Indeces the SearchInput's can be configured for
     *
-    * @return tbd
+    * @return List[SolrIndex]
     */
-  def listAll(implicit connection: Connection): List[SolrIndex] = {
-    SQL(s"select * from $TABLE_NAME order by name asc")
+  def getSolrIndexes(ids: Seq[String]) (implicit connection: Connection): List[SolrIndex] = {
+    val isLoadAll = (ids.isEmpty)
+    val idsString = ids.mkString("'","','","'")
+    SQL(s"select * from $TABLE_NAME where $isLoadAll or id in ($idsString) order by name asc")
       .as(sqlParser.*)
   }
 
-  def loadNameById(solrIndexId: SolrIndexId)(implicit connection: Connection): String = {
-    val allMatchingIndeces = SQL"select * from #$TABLE_NAME where id = $solrIndexId".as(sqlParser.*)
-
-    // TODO Handle illegal cases, if none or 1+ solr indeces selected
-    allMatchingIndeces.head.name
-  }
-
-  def loadById(solrIndexId: SolrIndexId)(implicit connection: Connection): SolrIndex = {
-    val allMatchingIndeces = SQL"select * from #$TABLE_NAME where id = $solrIndexId".as(sqlParser.*)
-
-    allMatchingIndeces.head
+  def loadNameById(solrIndexId: SolrIndexId) (implicit connection: Connection): String = {
+    val solrIndex = getSolrIndexes(Seq(solrIndexId.id)).headOption
+    if (solrIndex.nonEmpty)
+      solrIndex.get.name
+    else
+      ""
   }
 
   def insert(newSolrIndex: SolrIndex)(implicit connection: Connection): SolrIndexId = {

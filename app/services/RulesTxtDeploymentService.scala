@@ -321,7 +321,7 @@ class RulesTxtDeploymentService @Inject() (querqyRulesTxtGenerator: QuerqyRulesT
   def writeAllRulesTxtFilesAsZipFileToStream(out: OutputStream): Unit = {
     val zipStream = new ZipOutputStream(out)
     try {
-      for (index <- searchManagementRepository.listAllSolrIndexes) {
+      for (index <- searchManagementRepository.getSolrIndexes(Seq.empty)) {
         // TODO make targetSystem configurable from ApiController.downloadAllRulesTxtFiles ... go with "LIVE" from now (as there exist no different revisions of the search management content)!
         val rules = generateRulesTxtContentWithFilenames(index.id, "LIVE", logDebug = false)
         zipStream.putNextEntry(new ZipEntry(s"rules_${index.name}.txt"))

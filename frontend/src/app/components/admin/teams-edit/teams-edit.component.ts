@@ -13,6 +13,7 @@ import {SolrIndex, Team, User} from '../../../models';
 import {
   TeamService,
   UserService,
+  SolrService,
   ModalService
 } from '../../../services';
 import {ActivatedRoute, ParamMap} from "@angular/router";
@@ -23,92 +24,134 @@ import {ActivatedRoute, ParamMap} from "@angular/router";
 })
 export class TeamsEditComponent implements OnInit, OnChanges {
 
-
-  // why aren't we using this?
-  //@Output() showErrorMsg: EventEmitter<string> = new EventEmitter();
   @Output() showSuccessMsg: EventEmitter<string> = new EventEmitter();
-  //@Output() refreshRulesCollectionList: EventEmitter<string> = new EventEmitter();
-  @Output() teamsChange: EventEmitter<string> = new EventEmitter();
+  @Output() teamChange: EventEmitter<string> = new EventEmitter();
+  @Output() userChange: EventEmitter<string> = new EventEmitter();
 
-  solrIndices: SolrIndex[];
   team: Team;
-  users: User[];
+  teamUsers: User[];
   teamUserIds: string[];
+  teamSolrIndices: SolrIndex[];
+  teamSolrIndexIds: string[];
+  nonTeamSolrIndices: SolrIndex[];
+  addSolrIndexId: string;
+  addUserEmail: string;
 
   constructor(
     private route: ActivatedRoute,
     private teamService: TeamService,
     private userService: UserService,
+    private solrService: SolrService,
     private toasterService: ToasterService
   ) {
 
   }
+
   ngOnInit() {
     console.log('In TeamsEditComponent :: ngOnInit');
-
-    this.lookupUsers();
-    //this.lookupTeamUsers();
-
     this.route.paramMap.subscribe((params: ParamMap) => {
-      console.log(params);
-      console.log(params.get("teamId")!.toLowerCase());
-      this.teamService.getTeam(params.get("teamId")!.toLowerCase())
+      this.teamService.getTeam(params.get("teamId")!)
         .then(team => {
             this.team = team;
             this.lookupTeamUsers();
+            this.lookupTeamSolrIndices();
           }
         )
         .catch(error => this.showErrorMsg(error));
-
-
     })
-
+    this.addSolrIndexId = "DEFAULT";
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     console.log('In TeamsEditComponent :: ngOnChanges');
   }
 
-  lookupUsers() {
-    console.log('In TeamsEditComponent :: lookupUsers');
-    this.userService.listAllUsers()
-      .then(users => {
-        this.users = users;
-        console.log("FOUND SOME lookupUsers" + users.length);
-      })
-      .catch(error => this.showErrorMsg(error));
-  }
-
-  determineIfUserMemberOfTeam(userId: string): boolean {
-    console.log("userid:" + userId);
-    console.log(this.teamUserIds);
-    return true;
-    //return this.teamUserIds.includes(userId);
-  }
-
   lookupTeamUsers() {
-    console.log('In TeamsEditComponent :: lookupTeamUsers');
     this.teamService.lookupUserIdsByTeamId(this.team.id)
       .then(userids => {
         this.teamUserIds = userids;
-        console.log("FOUND SOME lookupTeamUsers IDS" + userids.length);
+        this.userService.listUsers(userids)
+          .then(users => this.teamUsers = users)
+          .catch(error => this.showErrorMsg(error));
       })
       .catch(error => this.showErrorMsg(error));
   }
 
 
-  clearForm() {
-    //this.name = '';
+  deleteUserFromTeam(userId: string) {
+    this.teamService.deleteUserFromTeam(userId, this.team.id)
+      .then(() => this.lookupTeamUsers())
+      .then(() => this.userChange.emit())
+      .catch(error => this.showErrorMsg(error));
   }
 
-  updateTeam( event: Event){
+  addUserEmailToTeam(email: string){
+    this.userService.lookupUserByEmail(email)
+      .then(user => {
+        if (!user) {
+          this.showErrorMsg("No user found for that email address!")
+        } else {
+          if (!this.teamUserIds.includes(user.id)) {
+            this.userService.addUserIdToTeam(user.id, this.team.id)
+              .then(() => {
+                this.lookupTeamUsers();
+                this.userChange.emit();
+              })
+              .catch(error => this.showErrorMsg(error));
+          } else {
+            this.showErrorMsg("email already assigned to team!")
+          }
+          this.addUserEmail = "";
+        }
+      })
+      .catch(error => this.showErrorMsg(error));
+  }
+
+  lookupNonTeamSolrIndices() {
+    const teamSolrIndexIdsSet = new Set(this.teamSolrIndexIds);
+    this.nonTeamSolrIndices = this.solrService.solrIndices.filter((solrIndex) => {
+      return !teamSolrIndexIdsSet.has(solrIndex.id);
+    });
+  }
+
+  lookupTeamSolrIndices() {
+    this.teamService.lookupSolrIndexIdsByTeamId(this.team.id)
+      .then(solrIndexIds => {
+        this.teamSolrIndexIds = solrIndexIds;
+        if (this.teamSolrIndexIds.length > 0) {
+          this.solrService.listSolrIndices(solrIndexIds)
+            .then(solrIndices => this.teamSolrIndices = solrIndices)
+            .catch(error => this.showErrorMsg(error));
+        } else {
+          this.teamSolrIndices = [];
+        }
+        this.lookupNonTeamSolrIndices()
+      })
+      .catch(error => this.showErrorMsg(error));
+  }
+
+  deleteSolrIndexFromTeam(solrIndexId: string) {
+    this.teamService.deleteSolrIndexFromTeam(solrIndexId, this.team.id)
+      .then(() => this.lookupTeamSolrIndices())
+      .catch(error => this.showErrorMsg(error));
+  }
+
+  addSolrIndexToTeam(solrIndexId: string){
+    console.log('In TeamsEditComponent :: addSolrIndexToTeam ' + solrIndexId);
+    if (solrIndexId != "DEFAULT") {
+      this.teamService.addSolrIndexToTeam(solrIndexId, this.team.id)
+        .then(() => this.lookupTeamSolrIndices())
+        .catch(error => this.showErrorMsg(error));
+      this.addSolrIndexId = "DEFAULT";
+    }
+  }
+
+  updateTeam(){
     console.log('In TeamsEditComponent :: updateTeam');
-    console.log(this.team);
     if (this.team.name) {
       this.teamService.updateTeam(this.team)
-        .then(() => this.teamsChange.emit())
+        .then(() => this.teamChange.emit())
         .then(() => this.showSuccessMsg.emit("Updated Team " + this.team.name))
-        .then(() => this.clearForm())
         .catch(error => this.showErrorMsg(error));
     }
   }

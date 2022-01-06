@@ -1,18 +1,18 @@
 package controllers
 
 import java.io.{OutputStream, PipedInputStream, PipedOutputStream}
-
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
+
 import javax.inject.Inject
 import play.api.Logging
 import play.api.mvc._
 import play.api.libs.json._
 import play.api.libs.json.Reads._
+
 import java.nio.file.Paths
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
-
 import scala.concurrent.{ExecutionContext, Future}
 import controllers.auth.AuthActionFactory
 import controllers.auth.UsernamePasswordAuthenticatedAction
@@ -24,6 +24,8 @@ import models.querqy.QuerqyRulesTxtGenerator
 import models.spellings.{CanonicalSpellingId, CanonicalSpellingValidator, CanonicalSpellingWithAlternatives}
 import play.api.Configuration
 import services.{RulesTxtDeploymentService, RulesTxtImportService}
+
+import java.sql.SQLIntegrityConstraintViolationException
 
 
 // TODO Make ApiController pure REST- / JSON-Controller to ensure all implicit Framework responses (e.g. 400, 500) conformity
@@ -48,10 +50,13 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     Ok(Json.toJson(featureToggleService.getJsFrontendToggleList))
   }
 
-  def listAllSolrIndeces = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+  def listSolrIndices(id: List[String]) = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
     val authInfo: AuthInfo = getAuthInfoInternal(request)
-    val solrIndices: List[SolrIndex] = searchManagementRepository.listAllSolrIndexes
-    // TODO make separate solrindices list for an admin user in rules mgt and in admin
+    val ids: Seq[String] = if(id.isEmpty)
+      Seq()
+    else
+      id
+    val solrIndices: List[SolrIndex] = searchManagementRepository.getSolrIndexes(ids)
     if (authInfo.currentUser.admin) {
       Ok(Json.toJson(solrIndices))
     } else {
@@ -84,7 +89,11 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
 
   def getSolrIndex(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action).async {
     Future {
-      Ok(Json.toJson(searchManagementRepository.getSolrIndex(SolrIndexId(solrIndexId))))
+      val solrIndexOption = searchManagementRepository.getSolrIndex(solrIndexId)
+      if (solrIndexOption.nonEmpty)
+        Ok(Json.toJson(solrIndexOption))
+      else
+        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Could not find solr index", None)))
     }
   }
 
@@ -331,7 +340,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
   }
 
   def getUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.getUser(userId)))
+    Ok(Json.toJson(searchManagementRepository.getUsers(Seq(userId))))
   }
 
   def getCurrentUser(): Action[AnyContent] = Action { request: Request[AnyContent] =>
@@ -436,8 +445,8 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def listAllUsers(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) {
-    Ok(Json.toJson(searchManagementRepository.listAllUsers()))
+  def listUsers(id: List[String]): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) {
+    Ok(Json.toJson(searchManagementRepository.getUsers(id)))
   }
 
   def lookupUserByEmail(email: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
@@ -449,7 +458,11 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
   }
 
   def getTeam(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) {
-    Ok(Json.toJson(searchManagementRepository.getTeam(teamId)))
+    val teamOption = searchManagementRepository.getTeam(teamId)
+    if (teamOption.nonEmpty)
+      Ok(Json.toJson(teamOption.get))
+    else
+      BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Team not found.", None)))
   }
 
   def addTeam(): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) { request: Request[AnyContent] =>
@@ -524,10 +537,18 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
 
   def addTeam2SolrIndex(teamId: String, solrIndexId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
-      if (searchManagementRepository.addTeam2SolrIndex(teamId, solrIndexId) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "Team successfully added to solr index", None)))
+      if (searchManagementRepository.getTeam(teamId).nonEmpty
+            && searchManagementRepository.getSolrIndex(solrIndexId).nonEmpty) {
+        try{
+          searchManagementRepository.addTeam2SolrIndex(teamId, solrIndexId)
+          Ok(Json.toJson(ApiResult(API_RESULT_OK, "Team successfully added to solr index", None)))
+        } catch {
+          case e: SQLIntegrityConstraintViolationException => {
+            BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Team/SolrIndex combination already exists", None)))
+          }
+        }
       } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Team not added to solr index", None)))
+        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Team not added to solr index because invalid ids", None)))
       }
     }
   }

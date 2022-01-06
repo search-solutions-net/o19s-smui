@@ -6,7 +6,7 @@ import {
   DeploymentLogInfo,
   SolrIndex,
   SuggestedSolrField,
-  ApiResult
+  ApiResult, User
 } from '../models';
 import { Subject } from 'rxjs';
 
@@ -59,6 +59,14 @@ export class SolrService {
           this.currentSolrIndexIdSubject.next(solrIndices[0].id);
         }
       });
+  }
+
+  listSolrIndices(ids: string[]): Promise<Array<SolrIndex>> {
+    var queryParams = '';
+    ids.forEach(s => queryParams += '&id=' + s)
+    return this.http
+      .get<SolrIndex[]>(`${this.baseUrl}/${this.solrIndexApiPath}?${queryParams}`)
+      .toPromise();
   }
 
   refreshSolrIndices(): Promise<void> {

@@ -29,7 +29,7 @@ object PredefinedTag {
   }
 
   def updateInDB(predefinedTags: Seq[PredefinedTag])(implicit connection: Connection): (Seq[InputTagId], Seq[InputTag]) = {
-    val indexIdsByName = SolrIndex.listAll.map(i => i.name -> i.id).toMap
+    val indexIdsByName = SolrIndex.getSolrIndexes(Seq.empty).map(i => i.name -> i.id).toMap
     val tagsInDBByContent = InputTag.loadAll().map(t => t.tagContent -> t).toMap
 
     val newTags = predefinedTags.map { tag =>

@@ -30,7 +30,7 @@ abstract class DBCompatibilitySpec extends FlatSpec with Matchers with TestData 
   "Most important rules DB queries" should "work using this database" in {
     db.withConnection { implicit conn =>
       SolrIndex.loadNameById(indexDe.id) shouldBe indexDe.name
-      SolrIndex.listAll shouldBe Seq(indexDe)
+      SolrIndex.getSolrIndexes shouldBe Seq(indexDe)
 
       val tag = InputTag(InputTagId(), Some(indexDe.id), Some("testProperty"), "testValue",
         exported = true, predefined = false, now)

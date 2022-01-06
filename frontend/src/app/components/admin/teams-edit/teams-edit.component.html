@@ -16,7 +16,7 @@
           id="updateTeamBtn"
           type="button"
           class="btn btn-primary"
-          (click)="updateTeam( $event)"
+          (click)="updateTeam()"
         >
           Update Team
         </button>
@@ -27,35 +27,83 @@
 
 <div class="card">
   <div class="card-body">
-    <h5 class="card-title">Team Membership</h5>
-    <h6 class="card-subtitle mb-2 text-muted">Which users belong to this team?</h6>
-
-    <div class="form-group row">
-
-      <ul class="list-group">
-        <li *ngFor="let user of users" [ngClass]="{'list-group-item': true, 'active': determineIfUserMemberOfTeam(user.id)}">{{ user.name }}</li>
-      </ul>
+    <h5 class="card-title">Rules Collections</h5>
+    <h6 class="card-subtitle mb-2 text-muted">Add rules collections to this team</h6>
+    <div class="row col-auto mb-4">
+      <label for="addSolrIndex" class="col-sm-2 col-form-label">Rules collection</label>
+      <select class="form-select col-3" id="addSolrIndex" [(ngModel)]="addSolrIndexId">
+        <option value="DEFAULT" selected>Select a rules collection</option>
+        <option *ngFor="let teamSolrIndex of nonTeamSolrIndices" value="{{teamSolrIndex.id}}">{{teamSolrIndex.name}} - {{teamSolrIndex.description}}</option>
+      </select>
+      &nbsp;&nbsp;&nbsp;
+      <button
+        type="button"
+        class="btn btn-primary btn-sm float-right"
+        [disabled]="addSolrIndexId === 'DEFAULT'"
+        (click)="addSolrIndexToTeam(addSolrIndexId)"
+      >
+        <i class="fa fa-plus" aria-hidden="true"></i>
+      </button>
     </div>
+    <h6 class="card-subtitle mb-2 text-muted">Which rules collections belong to this team?</h6>
+    <ul class="list-group">
+      <li
+        *ngFor="let solrIndex of teamSolrIndices"
+        [ngClass]="{
+          'list-group-item': true,
+          'active': false
+         }"
+      >
+        <span class="smui-align-middle list-item-term">{{ solrIndex.name }} - {{ solrIndex.description }}</span>
+        <button
+          type="button"
+          class="btn btn-danger btn-sm float-right"
+          (click)="deleteSolrIndexFromTeam(solrIndex.id)"
+        >
+          <i class="fa fa-minus" aria-hidden="true"></i>
+        </button>
+      </li>
+    </ul>
   </div>
 </div>
 
-
-
-
 <div class="card">
   <div class="card-body">
-    <h5 class="card-title">Rules Collections</h5>
-    <h6 class="card-subtitle mb-2 text-muted">Which rules collections belong to this team?</h6>
-
-    <div class="form-group row">
-
-      <ul class="list-group">
-        <li class="list-group-item active">Cras justo odio</li>
-        <li class="list-group-item">Dapibus ac facilisis in</li>
-        <li class="list-group-item">Morbi leo risus</li>
-        <li class="list-group-item">Porta ac consectetur ac</li>
-        <li class="list-group-item">Vestibulum at eros</li>
-      </ul>
+    <h5 class="card-title">Team Membership</h5>
+    <h6 class="card-subtitle mb-2 text-muted">Add users to this team via the email address</h6>
+    <div class="row col-auto mb-4">
+      <label for="addEmail" class="col-sm-2 col-form-label">email</label>
+      <input type="email" class="form-select col-3" id="addEmail" placeholder="Email Address" [(ngModel)]="addUserEmail"/>
+      &nbsp;&nbsp;&nbsp;
+      <button
+        type="button"
+        class="btn btn-primary btn-sm float-right"
+        [disabled]="!addUserEmail"
+        (click)="addUserEmailToTeam(addUserEmail)"
+      >
+        <i class="fa fa-plus" aria-hidden="true"></i>
+      </button>
     </div>
+    <h6 class="card-subtitle mb-2 text-muted">Which users belong to this team?</h6>
+    <ul class="list-group">
+      <li
+        *ngFor="let teamUser of teamUsers"
+        [ngClass]="{
+          'list-group-item': true,
+          'active': false
+         }"
+      >
+        <span class="smui-align-middle list-item-term">{{ teamUser.email }} - {{ teamUser.name }}
+          <span *ngIf="teamUser.admin"> (Administrator)</span>
+        </span>
+        <button
+          type="button"
+          class="btn btn-danger btn-sm float-right"
+          (click)="deleteUserFromTeam(teamUser.id)"
+        >
+          <i class="fa fa-minus" aria-hidden="true"></i>
+        </button>
+      </li>
+    </ul>
   </div>
 </div>
