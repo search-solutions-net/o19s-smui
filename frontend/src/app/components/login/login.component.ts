@@ -1,4 +1,9 @@
-import {Component, OnInit} from '@angular/core';
+import {
+  Component,
+  Output,
+  EventEmitter,
+  OnInit,
+} from '@angular/core';
 import { ToasterService } from 'angular2-toaster';
 import {Router} from '@angular/router';
 
@@ -16,13 +21,21 @@ import {
   styleUrls: ['../header-nav/header-nav.component.css']
 })
 export class LoginComponent implements OnInit {
+
+  @Output() emailChange: EventEmitter<string> = new EventEmitter();
+  @Output() passwordChange: EventEmitter<string> = new EventEmitter();
+  @Output() signupNameChange: EventEmitter<string> = new EventEmitter();
+  @Output() signupEmailChange: EventEmitter<string> = new EventEmitter();
+  @Output() signupPasswordChange: EventEmitter<string> = new EventEmitter();
+  @Output() signupPassword2Change: EventEmitter<string> = new EventEmitter();
+
   versionInfo?: SmuiVersionInfo;
   password: string;
   email: string;
-  signup_name: string;
-  signup_email: string;
-  signup_password: string;
-  signup_password2: string;
+  signupName: string;
+  signupEmail: string;
+  signupPassword: string;
+  signupPassword2: string;
 
   constructor(
     private toasterService: ToasterService,
@@ -41,8 +54,8 @@ export class LoginComponent implements OnInit {
 
   clearForm() {
     this.password = '';
-    this.signup_password = '';
-    this.signup_password2 = '';
+    this.signupPassword = '';
+    this.signupPassword2 = '';
   }
 
   public showSuccessMsg(msgText: string) {
@@ -79,19 +92,19 @@ export class LoginComponent implements OnInit {
 
   requestSignup() {
     console.log('In LoginComponent :: requestSignup');
-    if (this.signup_name && this.signup_email && this.signup_password && this.signup_password2) {
-      if (this.signup_password !== this.signup_password2) {
+    if (this.signupName && this.signupEmail && this.signupPassword && this.signupPassword2) {
+      if (this.signupPassword !== this.signupPassword2) {
         this.showErrorMsg("Password and confirmation password don't match!")
         this.clearForm();
       } else {
-        this.userService.createUser(this.signup_name, this.signup_email, this.signup_password, false)
+        this.userService.createUser(this.signupName, this.signupEmail, this.signupPassword, false)
                 .then(user => {
                   if (user == undefined) {
                     this.showErrorMsg("Could not signup your user!")
                     this.clearForm();
                   } else {
                     this.showSuccessMsg("Signed up your user profile: " + user.email);
-                    this.userService.login(this.signup_email, this.signup_password)
+                    this.userService.login(this.signupEmail, this.signupPassword)
                       .then(user => {
                           this.configService.getAuthInfo().then(r => {
                               if (this.configService.isLoggedIn()) {
