@@ -70,6 +70,13 @@ export class UserService {
       .toPromise();
   }
 
+  updateUser(id: string, name: string, email: string, password: string | null, admin: boolean): Promise<User> {
+    const body = JSON.stringify( { id: id, name: name, email: email, password: password, admin:admin });
+    return this.http
+      .post<User>(`${this.baseUrl}/${this.userApiPath}/${id}`, body, httpOptions)
+      .toPromise();
+  }
+
   deleteUser(id: string): Promise<ApiResult> {
     return this.http
       .delete<ApiResult>(`${this.baseUrl}/${this.userApiPath}/${id}`)

@@ -17,9 +17,9 @@ object UserId extends IdObject[UserId](new UserId(_))
 case class User(id: UserId = UserId(),
                     name: String,
                     email: String,
-                    password: String,
+                    password: Option[String],
                     admin: Boolean = false,
-                    lastUpdate: LocalDateTime = LocalDateTime.now()) {
+                    lastUpdate: Option[LocalDateTime] = Option(LocalDateTime.now())) {
 
   import User._
 
@@ -60,13 +60,13 @@ object User {
     Json.obj("displayValue" -> user.displayValue) ++ defaultWrites.writes(user)
   }
 
-  def anonymous(): User = User(UserId(ANONYMOUS_USER_ID), null, null, null, true, LocalDateTime.now())
+  def anonymous(): User = User(UserId(ANONYMOUS_USER_ID), null, null, Option.empty, true, Option(LocalDateTime.now()))
 
   def create(name: String,
              email: String,
-             password: String,
+             password: Option[String],
              admin: Boolean = false): User = {
-    User(UserId(), name, email, password, admin, LocalDateTime.now())
+    User(UserId(), name, email, password, admin, Option(LocalDateTime.now()))
   }
 
   val sqlParser: RowParser[User] = get[UserId](s"$TABLE_NAME.$ID") ~
@@ -75,7 +75,7 @@ object User {
     get[String](s"$TABLE_NAME.$PASSWORD") ~
     get[Int](s"$TABLE_NAME.$ADMIN") ~
     get[LocalDateTime](s"$TABLE_NAME.$LAST_UPDATE") map { case id ~ username ~ email ~ password ~ admin ~ lastUpdate =>
-    User(id, username, email, PASSWORD_MASKED, admin > 0, lastUpdate)
+    User(id, username, email, Option(PASSWORD_MASKED), admin > 0, Option(lastUpdate))
   }
 
   def insert(newUsers: User*)(implicit connection: Connection): Option[Int] = {
@@ -107,9 +107,13 @@ object User {
       .as(SqlParser.int(1).single)
   }
 
-  def update(id: UserId, username: String, email: String, password: String, admin: Boolean)(implicit connection: Connection): Int = {
+  def update(id: UserId, username: String, email: String, password: Option[String], admin: Boolean)(implicit connection: Connection): Int = {
     val adminInt = if (admin) 1 else 0
-    SQL"update #$TABLE_NAME set #$NAME = $username, #$EMAIL = $email, #$PASSWORD = $password, #$ADMIN = $adminInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
+    if (password.nonEmpty) {
+      val newPassword = password.get
+      SQL"update #$TABLE_NAME set #$NAME = $username, #$EMAIL = $email, #$PASSWORD = $newPassword, #$ADMIN = $adminInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
+    } else
+      SQL"update #$TABLE_NAME set #$NAME = $username, #$EMAIL = $email, #$ADMIN = $adminInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
   }
 
   def deleteByIds(ids: Seq[UserId])(implicit connection: Connection): Int = {

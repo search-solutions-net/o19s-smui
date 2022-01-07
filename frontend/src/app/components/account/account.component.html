@@ -1,0 +1,82 @@
+<div class="ng-star-inserted col-auto">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Your account</h5>
+      <h6 class="card-subtitle mb-2 text-muted">Account details</h6>
+      <div class="form-group row">
+        <label class="col-sm-2 col-form-label">email</label>
+        <div class="col-sm-10">
+          {{email}}
+        </div>
+      </div>
+      <div class="form-group row mb-4">
+        <label for="name" class="col-sm-2 col-form-label">name</label>
+        <div class="col-sm-10">
+          <input
+            type="text"
+            class="form-control"
+            id="name"
+            placeholder="Name"
+            [(ngModel)]="name"
+            (ngModelChange)="nameChange.emit($event)"
+            (keyup.enter)="requestUpdate()"
+          />
+        </div>
+      </div>
+      <div class="form-group row mb-5">
+        <label for="userAdmin" class="col-sm-2 col-form-label">Administrator?</label>
+        <div class="col-sm-10">
+          <button class="sm-1 btn btn-outline-secondary"
+                  id="userAdmin"
+                  [disabled]="true"
+          >
+            <i class="fa fa-check" aria-hidden="true" *ngIf="admin"></i>
+            <i class="fa fa-minus" aria-hidden="true" *ngIf="!admin"></i>
+          </button>
+        </div>
+      </div>
+      <h6 class="card-subtitle mb-2 text-muted">Change password (leaving password field blank will not change the password)</h6>
+      <div class="form-group row">
+        <label for="password" class="col-sm-2 col-form-label">password</label>
+        <div class="col-sm-10">
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            placeholder="Password"
+            [(ngModel)]="password"
+            (ngModelChange)="passwordChange.emit($event)"
+            (keyup.enter)="requestUpdate()"
+          />
+        </div>
+      </div>
+      <div class="form-group row">
+        <label for="password2" class="col-sm-2 col-form-label">confirm password</label>
+        <div class="col-sm-10">
+          <input
+            type="password"
+            class="form-control"
+            id="password2"
+            placeholder="Password2"
+            [(ngModel)]="password2"
+            (ngModelChange)="password2Change.emit($event)"
+            (keyup.enter)="requestUpdate()"
+          />
+        </div>
+      </div>
+      <div class="form-group row">
+        <div class="col-sm-10">
+          <button
+            class="btn btn-primary mr-2"
+            type="button"
+            (click)="requestUpdate()"
+            [disabled]="!name || !name.trim() ||
+                (!password && name === currentName)"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

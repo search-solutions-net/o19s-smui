@@ -40,33 +40,69 @@
   <div id="navbarSupportedContent" class="collapse navbar-collapse leftSpace">
     <ul class="navbar-nav mr-auto">
       <li class="nav-item">
-        <a
-          class="nav-link"
-          [ngClass]="{ active: router.url === '/rules' }"
-          routerLink="/rules"
-        >Rules</a
+        &nbsp;
+        <button class="btn btn-outline-secondary"
+                title="Rules"
+                [ngClass]="{ active: router.url.startsWith('/rules') }"
+                routerLink="/rules"
         >
+          <i class="fa fa-code" aria-hidden="true"></i>
+        </button>
       </li>
       <li class="nav-item">
-        <a
-          class="nav-link"
-          [ngClass]="{ active: router.url === '/report' }"
-          routerLink="/report"
-        >Report</a
+        &nbsp;
+        <button class="btn btn-outline-secondary"
+                title="Report"
+                [ngClass]="{ active: router.url.startsWith('/report') }"
+                routerLink="/report"
         >
-      </li>
-      <li class="nav-item" *ngIf="isAdminUser || !configService.isLoginRequired()">
-        <a
-          class="nav-link"
-          [ngClass]="{ active: router.url === '/admin' }"
-          routerLink="/admin"
-        >Admin</a
-        >
+          <i class="fa fa-print" aria-hidden="true"></i>
+        </button>
       </li>
       <li>
-        <button class="btn btn-outline-secondary" (click)="openHelpModal()">
-          <i class="fa fa-info-circle" aria-hidden="true"></i> Help
+        &nbsp;
+        <button class="btn btn-outline-secondary"
+                title="Configuration"
+                [ngClass]="{ active: router.url.startsWith('/admin') }"
+                *ngIf="isAdminUser || !configService.isLoginRequired()"
+                routerLink="/admin"
+        >
+          <i class="fa fa-tools" aria-hidden="true"></i>
         </button>
+      </li>
+      <li>
+        &nbsp;
+        <button class="btn btn-outline-secondary"
+                title="Help"
+                (click)="openHelpModal()">
+          <i class="fa fa-info-circle" aria-hidden="true"></i>
+        </button>
+      </li>
+      <li>
+        &nbsp;
+        <div class="btn-group">
+          <button class="btn btn-outline-secondary"
+                  title="My account"
+                  [ngClass]="{ active: router.url.startsWith('/account') }"
+                  *ngIf="configService.isLoggedIn() && configService.isLoginRequired()"
+                  routerLink="/account"
+          >
+            <i class="fa fa-user-check" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn-outline-secondary btn-outline-danger"
+                  title="Sign out"
+                  *ngIf="featureToggleService.getSimpleLogoutButtonTargetUrl().trim().length > 0
+                          || (configService.isLoggedIn() && configService.isLoginRequired())"
+                  (click)="callSimpleLogoutUrl()"
+          >
+            <i class="fa fa-sign-out-alt" aria-hidden="true"
+                  *ngIf="featureToggleService.getSimpleLogoutButtonTargetUrl().trim().length > 0">
+            </i>
+            <i class="fa fa-power-off" aria-hidden="true"
+                  *ngIf="configService.isLoggedIn() && configService.isLoginRequired()">
+            </i>
+          </button>
+        </div>
       </li>
     </ul>
 
@@ -129,27 +165,6 @@
         </button>
 
       </div>
-    </div>
-    <div>&nbsp;</div>
-    <div *ngIf="
-      featureToggleService.getSimpleLogoutButtonTargetUrl().trim()
-        .length > 0
-    && !configService.isLoginRequired()"
-    >
-      <button
-        type="button"
-        class="btn btn-outline-secondary"
-        (click)="callSimpleLogoutUrl()"
-      >
-        Logout
-      </button>
-    </div>
-    <div *ngIf="configService.isLoggedIn() && configService.isLoginRequired()">
-      <button type="button" class="btn btn-outline-secondary"
-        (click)="callSimpleLogoutUrl()"
-      >
-        {{this.currentUser}}&nbsp;<i class="fa fa-sign-out-alt" aria-hidden="true"></i>
-      </button>
     </div>
   </div>
 </nav>

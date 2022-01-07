@@ -359,7 +359,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
         val email = (json \ "email").as[String]
         val password = (json \ "password").as[String]
         if (searchManagementRepository.isValidEmailPasswordCombo(email, password)) {
-          Ok(Json.toJson(getAuthInfoInternal(request))).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(email)))
+          Ok(Json.toJson(ApiResult(API_RESULT_OK, email + " signed on", None))).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(email)))
         } else {
           Unauthorized(Json.toJson(getAuthInfoInternal(request)))
         }
@@ -405,7 +405,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       val admin =  (json \ "admin").as[Boolean]
       try {
         val user = searchManagementRepository.addUser(
-          User.create(name = name, email = email, password = password, admin = admin)
+          User.create(name = name, email = email, password = Option(password), admin = admin)
         )
         Ok(Json.toJson(user))
       } catch {
@@ -418,20 +418,25 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def updateUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true) { request: Request[AnyContent] =>
+  def updateUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson
-
-    // Expecting json body
-    jsonBody.map { json =>
-      val user = json.as[User]
-      if (searchManagementRepository.updateUser(user) > 0) {
-        Ok(Json.toJson(ApiResult(API_RESULT_OK, "Updating user successful.", Some(UserId(userId)))))
-      } else {
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating user failed. User not found.", None)))
+    // ensure a non-admin can only update his own user profile
+    val currentUser = authActionFactory.getCurrentUser(request).getOrElse(User.anonymous())
+    if (!currentUser.admin && currentUser.id.id != userId) {
+      BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating another user by a non admin user is not allowed.", None)))
+    } else {
+      // Expecting json body
+      jsonBody.map { json =>
+        val user = json.as[User]
+        if (searchManagementRepository.updateUser(user) > 0) {
+          Ok(Json.toJson(ApiResult(API_RESULT_OK, "Updating user successful.", Some(UserId(userId)))))
+        } else {
+          BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating user failed. User not found.", None)))
+        }
+      }.getOrElse {
+        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating user failed. Unexpected body data.", None)))
       }
-    }.getOrElse {
-      BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating user failed. Unexpected body data.", None)))
     }
   }
 

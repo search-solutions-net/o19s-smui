@@ -1,7 +1,7 @@
 
 <ul ngbNav #nav="ngbNav" class="nav-tabs">
   <li ngbNavItem *ngIf="isAdminUser">
-    <a ngbNavLink>Team Management</a>
+    <a ngbNavLink>Teams</a>
     <ng-template ngbNavContent>
 
       <app-smui-admin-teams-create
@@ -22,7 +22,7 @@
     </ng-template>
   </li>
   <li ngbNavItem *ngIf="isAdminUser">
-    <a ngbNavLink>User Management</a>
+    <a ngbNavLink>Users</a>
     <ng-template ngbNavContent>
       <app-smui-admin-users-create
         (showSuccessMsg)="showSuccessMsg($event)"
@@ -40,7 +40,7 @@
     </ng-template>
   </li>
   <li ngbNavItem *ngIf="isAdminUser">
-    <a ngbNavLink>Rules Collection Management</a>
+    <a ngbNavLink>Rules Collections</a>
     <ng-template ngbNavContent>
       <app-smui-admin-rules-collection-create
         (showSuccessMsg)="showSuccessMsg($event)"
