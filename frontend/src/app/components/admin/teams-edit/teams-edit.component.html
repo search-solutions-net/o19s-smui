@@ -1,7 +1,7 @@
 <div class="card" *ngIf="team">
   <div class="card-body">
     <h5 class="card-title">Update Team</h5>
-    <h6 class="card-subtitle mb-2 text-muted">Update a team to manage access to Rules Collections by users</h6>
+    <h6 class="card-subtitle mb-2 text-muted">Update the team details</h6>
 
     <div class="form-group row">
       <label for="teamName" class="col-sm-2 col-form-label">Team Name</label>
@@ -28,7 +28,7 @@
 <div class="card">
   <div class="card-body">
     <h5 class="card-title">Rules Collections</h5>
-    <h6 class="card-subtitle mb-2 text-muted">Add rules collections to this team</h6>
+    <h6 class="card-subtitle mb-2 text-muted">Add rules collections to be managed by this team</h6>
     <div class="row col-auto mb-4">
       <label for="addSolrIndex" class="col-sm-2 col-form-label">Rules collection</label>
       <select class="form-select col-3" id="addSolrIndex" [(ngModel)]="addSolrIndexId">
@@ -70,7 +70,7 @@
 <div class="card">
   <div class="card-body">
     <h5 class="card-title">Team Membership</h5>
-    <h6 class="card-subtitle mb-2 text-muted">Add users to this team via the email address</h6>
+    <h6 class="card-subtitle mb-2 text-muted">Add users to this team by looking them up via their email address</h6>
     <div class="row col-auto mb-4">
       <label for="addEmail" class="col-sm-2 col-form-label">email</label>
       <input type="email" class="form-select col-3" id="addEmail" placeholder="Email Address" [(ngModel)]="addUserEmail"/>
