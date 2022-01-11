@@ -9,7 +9,7 @@ GET     /health   controllers.HealthController.health
 # serve the API v1 Specification
 # TODO search-input URL path partially "behind" solrIndexId path component and partially not
 GET     /api/v1/featureToggles                                  controllers.ApiController.getFeatureToggles
-GET     /api/v1/solr-index                                      controllers.ApiController.listSolrIndices(id: List[String])
+GET     /api/v1/solr-index                                      controllers.ApiController.listSolrIndices(id: List[String], optionAll: Option[Boolean])
 GET     /api/v1/solr-index/:solrIndexId                         controllers.ApiController.getSolrIndex(solrIndexId: String)
 PUT     /api/v1/solr-index                                      controllers.ApiController.addNewSolrIndex
 DELETE  /api/v1/solr-index/:solrIndexId                         controllers.ApiController.deleteSolrIndex(solrIndexId: String)

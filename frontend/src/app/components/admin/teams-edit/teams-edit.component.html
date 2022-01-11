@@ -31,11 +31,16 @@
     <h6 class="card-subtitle mb-2 text-muted">Add rules collections to be managed by this team</h6>
     <div class="row col-auto mb-4">
       <label for="addSolrIndex" class="col-sm-2 col-form-label">Rules collection</label>
-      <select class="form-select col-3" id="addSolrIndex" [(ngModel)]="addSolrIndexId">
+      <select
+        class="form-select col-3"
+        id="addSolrIndex"
+        [(ngModel)]="addSolrIndexId"
+        (ngModelChange)="addSolrIndexIdChange.emit($event)"
+        (keyup.enter)="addSolrIndexToTeam(addSolrIndexId)"
+      >
         <option value="DEFAULT" selected>Select a rules collection</option>
         <option *ngFor="let teamSolrIndex of nonTeamSolrIndices" value="{{teamSolrIndex.id}}">{{teamSolrIndex.name}} - {{teamSolrIndex.description}}</option>
       </select>
-      &nbsp;&nbsp;&nbsp;
       <button
         type="button"
         class="btn btn-primary btn-sm float-right"
@@ -73,8 +78,15 @@
     <h6 class="card-subtitle mb-2 text-muted">Add users to this team by looking them up via their email address</h6>
     <div class="row col-auto mb-4">
       <label for="addEmail" class="col-sm-2 col-form-label">email</label>
-      <input type="email" class="form-select col-3" id="addEmail" placeholder="Email Address" [(ngModel)]="addUserEmail"/>
-      &nbsp;&nbsp;&nbsp;
+      <input
+        type="email"
+        class="form-select col-3"
+        id="addEmail"
+        placeholder="Email Address"
+        [(ngModel)]="addUserEmail"
+        (ngModelChange)="addUserEmailChange.emit($event)"
+        (keyup.enter)="addUserEmailToTeam(addUserEmail)"
+      />
       <button
         type="button"
         class="btn btn-primary btn-sm float-right"

@@ -39,7 +39,7 @@ export class AppComponent implements OnInit {
         if (this.isInitialized) {
           Promise.all([
             this.initAuthInfo(),
-            this.initSolarIndices()
+            this.initSolrIndices()
           ]).then(() => {
             this.isLoggedIn = this.configService.isLoggedIn();
             console.log('In AppComponent :: ngOnInit :: isLoggedIn = ' + this.configService.isLoggedIn() + ' authInfo = ' + this.configService.authInfo?.currentUser.id);
@@ -55,10 +55,8 @@ export class AppComponent implements OnInit {
     });
   }
 
-  private initSolarIndices(): Promise<void> {
-    return this.solrService.listAllSolrIndices().catch(() => {
-      this.errors.push('Could not fetch Solr configuration from back-end');
-    });
+  private initSolrIndices(): Promise<void> {
+    return this.solrService.refreshSolrIndicesByIds(this.configService.getAuthSolrIndices())
   }
 
   private initVersionInfo(): Promise<void> {

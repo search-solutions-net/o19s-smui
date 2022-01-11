@@ -12,10 +12,12 @@
       </app-smui-admin-teams-create>
 
       <app-smui-admin-teams-list
+        (showSuccessMsg)="showSuccessMsg($event)"
+        (showErrorMsg)="showErrorMsg($event)"
         (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
         (teamsChange)="teamsChange"
         [teams]="teams"
-        [solrIndices]="solrIndices"
+        [adminSolrIndices]="adminSolrIndices"
       >
       </app-smui-admin-teams-list>
 
@@ -32,6 +34,8 @@
       </app-smui-admin-users-create>
 
       <app-smui-admin-users-list
+        (showSuccessMsg)="showSuccessMsg($event)"
+        (showErrorMsg)="showErrorMsg($event)"
         (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
         (usersChange)="usersChange"
         [users]="users"
@@ -50,9 +54,11 @@
       </app-smui-admin-rules-collection-create>
 
       <app-smui-admin-rules-collection-list
+        (showSuccessMsg)="showSuccessMsg($event)"
+        (showErrorMsg)="showErrorMsg($event)"
         (openDeleteConfirmModal)="openDeleteConfirmModal($event)"
         (solrIndicesChange)="solrIndicesChange($event)"
-        [solrIndices]="solrIndices"
+        [adminSolrIndices]="adminSolrIndices"
       >
       </app-smui-admin-rules-collection-list>
     </ng-template>

@@ -50,15 +50,19 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     Ok(Json.toJson(featureToggleService.getJsFrontendToggleList))
   }
 
-  def listSolrIndices(id: List[String]) = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
+  def listSolrIndices(id: List[String], optionAll: Option[Boolean]) = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
     val authInfo: AuthInfo = getAuthInfoInternal(request)
     val ids: Seq[String] = if(id.isEmpty)
       Seq()
     else
       id
     val solrIndices: List[SolrIndex] = searchManagementRepository.getSolrIndexes(ids)
-    if (authInfo.currentUser.admin) {
-      Ok(Json.toJson(solrIndices))
+    if (optionAll.getOrElse(false)) {
+      if (authInfo.currentUser.admin) {
+        Ok(Json.toJson(solrIndices))
+      } else {
+        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Request to display all rules collections only valid for administrator user", None)))
+      }
     } else {
       val filteredSolrIndices: List[SolrIndex] =
         solrIndices
@@ -66,6 +70,16 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
           .filter(solrIndex => authInfo.solrIndices.contains(solrIndex.id.id))
           .toList
       Ok(Json.toJson(filteredSolrIndices))
+    }
+  }
+
+  def getSolrIndex(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action).async {
+    Future {
+      val solrIndexOption = searchManagementRepository.getSolrIndex(solrIndexId)
+      if (solrIndexOption.nonEmpty)
+        Ok(Json.toJson(solrIndexOption))
+      else
+        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Could not find solr index", None)))
     }
   }
 
@@ -87,20 +101,21 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
-  def getSolrIndex(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action).async {
-    Future {
-      val solrIndexOption = searchManagementRepository.getSolrIndex(solrIndexId)
-      if (solrIndexOption.nonEmpty)
-        Ok(Json.toJson(solrIndexOption))
-      else
-        BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Could not find solr index", None)))
-    }
-  }
-
   def deleteSolrIndex(solrIndexId: String) = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
-      searchManagementRepository.deleteSolrIndex(solrIndexId)
-      Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting Solr Index successful", None)))
+      try{
+        if (searchManagementRepository.deleteSolrIndex(solrIndexId) > 0) {
+          searchManagementRepository.lookupTeamIdsBySolrIndexId(solrIndexId)
+            .foreach(teamId => searchManagementRepository.deleteTeam2SolrIndex(teamId, solrIndexId))
+          Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting Solr Index successful", None)))
+        } else {
+          BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Deleting rules collection failed. Not found.", None)))
+        }
+      } catch {
+        case e: Exception => {
+          BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, e.getMessage(), None)))
+        }
+      }
     }
   }
 
@@ -429,13 +444,35 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     if (!currentUser.admin && currentUser.id.id != userId) {
       BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating another user by a non admin user is not allowed.", None)))
     } else {
-      // Expecting json body
       jsonBody.map { json =>
-        val user = json.as[User]
-        if (searchManagementRepository.updateUser(user) > 0) {
+        val updateResult =
+          if (!currentUser.admin) { // non admin can only set name and password
+            val name = (json \ "name").as[String]
+            val password = (json \ "password").as[String]
+            searchManagementRepository.updateUserNameAndPassword(userId, name, Option(password))
+          } else {
+            val user = json.as[User]
+            if (user.id.id == userId) {
+              searchManagementRepository.updateUser(user)
+            } else {
+              -1
+            }
+          }
+        if (updateResult > 0) {
           Ok(Json.toJson(ApiResult(API_RESULT_OK, "Updating user successful.", Some(UserId(userId)))))
         } else {
-          BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating user failed. User not found.", None)))
+          BadRequest(
+            Json.toJson(
+              ApiResult(
+                API_RESULT_FAIL,
+                if (updateResult == -1)
+                  "Updating user failed. User not found."
+                else
+                  "User id in body doesn't correspond to user id of request",
+                None
+              )
+            )
+          )
         }
       }.getOrElse {
         BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating user failed. Unexpected body data.", None)))
@@ -508,6 +545,8 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
   def deleteTeam(teamId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action, true).async {
     Future {
       if (searchManagementRepository.deleteTeam(teamId) > 0) {
+        searchManagementRepository.lookupUserIdsByTeamId(teamId)
+          .foreach(userId => searchManagementRepository.deleteUser2Team(userId, teamId))
         Ok(Json.toJson(ApiResult(API_RESULT_OK, "Deleting team successful", None)))
       } else {
         BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Deleting team failed. Team not found.", None)))
@@ -804,5 +843,4 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
   }
-
 }

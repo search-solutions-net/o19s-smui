@@ -2,7 +2,7 @@ import {Component, OnInit, Input, SimpleChanges} from '@angular/core';
 
 import { ToasterService } from 'angular2-toaster';
 
-import { SolrIndex, Team, User } from '../../models';
+import {ApiResult, SolrIndex, Team, User} from '../../models';
 
 import {
   SolrService,
@@ -30,14 +30,16 @@ export class AdminComponent implements OnInit {
   }
 
   isAdminUser: boolean;
-  solrIndices: SolrIndex[];
+  adminSolrIndices: SolrIndex[];
   teams: Team[];
   users: User[];
 
   ngOnInit() {
     console.log('In AdminComponent :: ngOnInit');
     this.isAdminUser = this.configService.isAdminUser();
-    this.solrIndices = this.solrService.solrIndices;
+    this.solrService.listAllSolrIndices()
+      .then(solrIndices => this.adminSolrIndices = solrIndices)
+      .catch(error => this.showApiErrorMsg(error.error));
     this.lookupTeams();
     this.lookupUsers();
   }
@@ -57,6 +59,9 @@ export class AdminComponent implements OnInit {
     this.toasterService.pop('error', '', msgText);
   }
 
+  public showApiErrorMsg(error: ApiResult) {
+    this.showErrorMsg(error.message);
+  }
 
   // @ts-ignore
   public openDeleteConfirmModal({ deleteCallback }) {
@@ -69,7 +74,9 @@ export class AdminComponent implements OnInit {
 
   public solrIndicesChange( id: string){
     console.log("AdminComponent::solrIndicesChange")
-    this.solrIndices = this.solrService.solrIndices;
+    this.solrService.listAllSolrIndices()
+      .then(solrIndices => this.adminSolrIndices = solrIndices)
+      .catch(error => this.showApiErrorMsg(error.error));
   }
 
   public teamsChange( ){
@@ -87,9 +94,8 @@ export class AdminComponent implements OnInit {
     this.teamService.listAllTeams()
       .then(teams => {
         this.teams = teams;
-        console.log("FOUND SOME TEAMS" + teams.length);
       })
-      .catch(error => this.showErrorMsg(error));
+      .catch(error => this.showApiErrorMsg(error.error));
   }
 
   lookupUsers() {
@@ -97,9 +103,8 @@ export class AdminComponent implements OnInit {
     this.userService.listAllUsers()
       .then(users => {
         this.users = users;
-        console.log("FOUND SOME USERS" + users.length);
       })
-      .catch(error => this.showErrorMsg(error));
+      .catch(error => this.showApiErrorMsg(error.error));
   }
 
   // @ts-ignore

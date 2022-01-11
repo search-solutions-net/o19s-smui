@@ -8,7 +8,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 
-import { SolrIndex } from '../../../models';
+import {ApiResult, SolrIndex} from '../../../models';
 import {
   SolrService,
   ModalService
@@ -20,10 +20,11 @@ import {
 })
 export class RulesCollectionListComponent implements OnInit, OnChanges {
 
-  @Input() solrIndices: Array<SolrIndex> = [];
+  @Input() adminSolrIndices: Array<SolrIndex> = [];
 
   @Output() openDeleteConfirmModal: EventEmitter<any> = new EventEmitter();
   @Output() showErrorMsg: EventEmitter<string> = new EventEmitter();
+  @Output() showSuccessMsg: EventEmitter<string> = new EventEmitter();
   @Output() solrIndicesChange: EventEmitter<string> = new EventEmitter();
 
   constructor(
@@ -44,12 +45,15 @@ export class RulesCollectionListComponent implements OnInit, OnChanges {
     const deleteCallback = () =>
       this.solrService
         .deleteSolrIndex(id)
-        .then(() => this.solrService.refreshSolrIndices())
+        .then(() => this.solrService.listAllSolrIndices())
         .then(() => this.solrIndicesChange.emit(id))
         .then(() => this.solrService.emitRulesCollectionChangeEvent(""))
-        .catch(error => this.showErrorMsg.emit(error));
+        .then(() => this.showSuccessMsg.emit("Rules collection deleted"))
+        .catch(error => {
+          const apiResult = error.error as ApiResult;
+          this.showErrorMsg.emit(apiResult.message);
+        });
 
-
-    this.openDeleteConfirmModal.emit({ deleteCallback });
+    this.openDeleteConfirmModal.emit({ deleteCallback })
   }
 }

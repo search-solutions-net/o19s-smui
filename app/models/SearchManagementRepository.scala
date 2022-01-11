@@ -75,6 +75,16 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
       throw new Exception("Can't delete Solr Index that has " + searchInputs.size + " inputs existing");
     }
 
+    val teamIds = lookupTeamIdsBySolrIndexId(solrIndexIdId.id)
+    if (teamIds.size > 0) {
+      val teamNames =
+        teamIds
+          .toStream
+          .map(teamId => getTeam(teamId).map(team => team.name).getOrElse("-"))
+          .mkString(",")
+      throw new Exception("Can't delete rules collection that is linked to " + teamIds.size + " team(s): " + teamNames);
+    }
+
     val id = SolrIndex.delete(solrIndexId)
 
     id
@@ -330,6 +340,11 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
 
   def updateUser(user: User): Int = db.withConnection { implicit connection =>
     User.update(user.id, user.name, user.email, user.password, user.admin)
+  }
+
+  def updateUserNameAndPassword(id: String, username: String, password: Option[String]): Int = db.withConnection { implicit connection =>
+    val existingUser = User.getUser(id).getOrElse(User.anonymous())
+    User.update(existingUser.id, username, existingUser.email, password, existingUser.admin)
   }
 
   def deleteUser(userId: String): Int = db.withConnection { implicit connection =>

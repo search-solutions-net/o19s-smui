@@ -8,7 +8,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 
-import { SolrIndex } from '../../../models';
+import {ApiResult, SolrIndex} from '../../../models';
 import {
   UserService,
   ModalService
@@ -61,7 +61,10 @@ export class UsersCreateComponent implements OnInit, OnChanges {
         .then(() => this.usersChange.emit())
         .then(() => this.showSuccessMsg.emit("Created new User " + this.email))
         .then(() => this.clearForm())
-        .catch(error => this.showErrorMsg.emit(error));
+        .catch(error => {
+          const apiResult = error.error as ApiResult;
+          this.showErrorMsg.emit(apiResult.message);
+        });
     }
   }
 

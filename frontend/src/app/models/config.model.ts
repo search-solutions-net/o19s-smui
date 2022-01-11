@@ -9,9 +9,9 @@ export class SmuiVersionInfo {
 
 export class AuthInfoModel {
   currentUser: User;
-  teams: String[];
-  solrIndices: String[];
+  teams: string[];
+  solrIndices: string[];
   isLoginRequired: boolean;
   isLoggedIn: boolean;
-  authAction: String;
+  authAction: string;
 }

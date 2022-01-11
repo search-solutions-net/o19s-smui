@@ -31,6 +31,10 @@ export class ConfigService {
       });
   }
 
+  getAuthSolrIndices(): string[] {
+    return this.authInfo !== undefined ? this.authInfo.solrIndices : [];
+  }
+
   isLoginRequired(): boolean {
     return this.authInfo !== undefined && this.authInfo.isLoginRequired
   }

@@ -4,7 +4,7 @@
     <h5 class="card-title">Rules Collections</h5>
     <h6 class="card-subtitle mb-2 text-muted">Available Rules Collections in SMUI</h6>
 
-    <ul *ngFor="let solrIndex of solrIndices" class="list-group smui-search-input-list">
+    <ul *ngFor="let solrIndex of adminSolrIndices" class="list-group smui-search-input-list">
         <li class="list-group-item">
           {{ solrIndex.description }} ({{ solrIndex.name }})
           <div class="float-right">

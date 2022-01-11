@@ -14,9 +14,10 @@ import {
   TeamService,
   UserService,
   SolrService,
+  ConfigService,
   ModalService
 } from '../../../services';
-import {ActivatedRoute, ParamMap} from "@angular/router";
+import {ActivatedRoute, ParamMap, Router} from "@angular/router";
 
 @Component({
   selector: 'app-smui-admin-teams-edit',
@@ -24,13 +25,15 @@ import {ActivatedRoute, ParamMap} from "@angular/router";
 })
 export class TeamsEditComponent implements OnInit, OnChanges {
 
-  @Output() showSuccessMsg: EventEmitter<string> = new EventEmitter();
   @Output() teamChange: EventEmitter<string> = new EventEmitter();
   @Output() userChange: EventEmitter<string> = new EventEmitter();
+  @Output() addSolrIndexIdChange: EventEmitter<string> = new EventEmitter();
+  @Output() addUserEmailChange: EventEmitter<string> = new EventEmitter();
 
   team: Team;
   teamUsers: User[];
   teamUserIds: string[];
+  adminSolrIndices: SolrIndex[];
   teamSolrIndices: SolrIndex[];
   teamSolrIndexIds: string[];
   nonTeamSolrIndices: SolrIndex[];
@@ -39,9 +42,11 @@ export class TeamsEditComponent implements OnInit, OnChanges {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private teamService: TeamService,
     private userService: UserService,
     private solrService: SolrService,
+    private configService: ConfigService,
     private toasterService: ToasterService
   ) {
 
@@ -60,10 +65,35 @@ export class TeamsEditComponent implements OnInit, OnChanges {
         .catch(error => this.showErrorMsg(error));
     })
     this.addSolrIndexId = "DEFAULT";
+    this.solrService.listSolrIndices([], true)
+      .then(solrIndices => this.adminSolrIndices = solrIndices)
+      .catch(error => this.showErrorMsg(error));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     console.log('In TeamsEditComponent :: ngOnChanges');
+  }
+
+  public showSuccessMsg(msgText: string) {
+    this.toasterService.pop('success', '', msgText);
+  }
+
+  public showErrorMsg(msgText: string) {
+    this.toasterService.pop('error', '', msgText);
+  }
+
+  verifyRefreshUserSolrIndices(updatedUserId: string) {
+    var isUpdateForCurrentUser =
+      updatedUserId.length == 0 ?
+        this.configService.authInfo && this.configService.authInfo.teams.includes(this.team.id) :
+        this.configService.authInfo && this.configService.authInfo.currentUser.id == updatedUserId;
+    console.log('isUpdateForCurrentUser: ' + isUpdateForCurrentUser)
+    if (isUpdateForCurrentUser) {
+      this.configService.getAuthInfo()
+        .then(() => this.solrService.refreshSolrIndicesByIds(this.configService.getAuthSolrIndices()))
+        .then(() => window.location.reload())
+        .catch(error => this.showErrorMsg(error));
+    }
   }
 
   lookupTeamUsers() {
@@ -77,11 +107,12 @@ export class TeamsEditComponent implements OnInit, OnChanges {
       .catch(error => this.showErrorMsg(error));
   }
 
-
   deleteUserFromTeam(userId: string) {
     this.teamService.deleteUserFromTeam(userId, this.team.id)
       .then(() => this.lookupTeamUsers())
       .then(() => this.userChange.emit())
+      .then(() => this.showSuccessMsg('User removed from team'))
+      .then(() => this.verifyRefreshUserSolrIndices(userId))
       .catch(error => this.showErrorMsg(error));
   }
 
@@ -93,10 +124,10 @@ export class TeamsEditComponent implements OnInit, OnChanges {
         } else {
           if (!this.teamUserIds.includes(user.id)) {
             this.userService.addUserIdToTeam(user.id, this.team.id)
-              .then(() => {
-                this.lookupTeamUsers();
-                this.userChange.emit();
-              })
+              .then(() => this.lookupTeamUsers())
+              .then(() => this.userChange.emit())
+              .then(() => this.showSuccessMsg("Added user to team"))
+              .then(() => this.verifyRefreshUserSolrIndices(user.id))
               .catch(error => this.showErrorMsg(error));
           } else {
             this.showErrorMsg("email already assigned to team!")
@@ -109,21 +140,20 @@ export class TeamsEditComponent implements OnInit, OnChanges {
 
   lookupNonTeamSolrIndices() {
     const teamSolrIndexIdsSet = new Set(this.teamSolrIndexIds);
-    this.nonTeamSolrIndices = this.solrService.solrIndices.filter((solrIndex) => {
-      return !teamSolrIndexIdsSet.has(solrIndex.id);
-    });
+    this.nonTeamSolrIndices = this.adminSolrIndices.filter((solrIndex) => {
+        return !teamSolrIndexIdsSet.has(solrIndex.id);
+      });
   }
 
   lookupTeamSolrIndices() {
+    this.teamSolrIndices = [];
     this.teamService.lookupSolrIndexIdsByTeamId(this.team.id)
       .then(solrIndexIds => {
         this.teamSolrIndexIds = solrIndexIds;
         if (this.teamSolrIndexIds.length > 0) {
-          this.solrService.listSolrIndices(solrIndexIds)
+          this.solrService.listSolrIndices(solrIndexIds, true)
             .then(solrIndices => this.teamSolrIndices = solrIndices)
             .catch(error => this.showErrorMsg(error));
-        } else {
-          this.teamSolrIndices = [];
         }
         this.lookupNonTeamSolrIndices()
       })
@@ -133,6 +163,8 @@ export class TeamsEditComponent implements OnInit, OnChanges {
   deleteSolrIndexFromTeam(solrIndexId: string) {
     this.teamService.deleteSolrIndexFromTeam(solrIndexId, this.team.id)
       .then(() => this.lookupTeamSolrIndices())
+      .then(() => this.showSuccessMsg("Rules collection removed from team"))
+      .then(() => this.verifyRefreshUserSolrIndices(''))
       .catch(error => this.showErrorMsg(error));
   }
 
@@ -141,6 +173,8 @@ export class TeamsEditComponent implements OnInit, OnChanges {
     if (solrIndexId != "DEFAULT") {
       this.teamService.addSolrIndexToTeam(solrIndexId, this.team.id)
         .then(() => this.lookupTeamSolrIndices())
+        .then(() => this.showSuccessMsg("Added rules collection to team"))
+        .then(() => this.verifyRefreshUserSolrIndices(''))
         .catch(error => this.showErrorMsg(error));
       this.addSolrIndexId = "DEFAULT";
     }
@@ -151,15 +185,9 @@ export class TeamsEditComponent implements OnInit, OnChanges {
     if (this.team.name) {
       this.teamService.updateTeam(this.team)
         .then(() => this.teamChange.emit())
-        .then(() => this.showSuccessMsg.emit("Updated Team " + this.team.name))
+        .then(() => this.showSuccessMsg("Updated team"))
         .catch(error => this.showErrorMsg(error));
     }
   }
-
-  public showErrorMsg(msgText: string) {
-    this.toasterService.pop('error', '', msgText);
-  }
-
-
 
 }

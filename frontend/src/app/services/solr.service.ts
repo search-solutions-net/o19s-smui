@@ -49,36 +49,41 @@ export class SolrService {
     );
   }
 
-  listAllSolrIndices(): Promise<void> {
-    return this.http
-      .get<SolrIndex[]>(`${this.baseUrl}/${this.solrIndexApiPath}`)
-      .toPromise()
-      .then(solrIndices => {
-        if (solrIndices.length > 0) {
-          this.solrIndices = solrIndices;
-          this.currentSolrIndexIdSubject.next(solrIndices[0].id);
-        }
-      });
+  listAllSolrIndices(): Promise<SolrIndex[]> {
+    return this.listSolrIndices([], true);
   }
 
-  listSolrIndices(ids: string[]): Promise<Array<SolrIndex>> {
+  listSolrIndices(ids: string[], optionAll: boolean): Promise<SolrIndex[]> {
     var queryParams = '';
-    ids.forEach(s => queryParams += '&id=' + s)
+    if (optionAll) {
+      queryParams += 'optionAll=true';
+    }
+    if (ids.length != 0) {
+      ids.forEach(s => queryParams += '&id=' + s)
+    }
+    if (optionAll || ids.length != 0) {
+      if (queryParams.startsWith('&')) {
+        queryParams = queryParams.substr(1)
+      }
+      queryParams = '?' + queryParams;
+    }
     return this.http
-      .get<SolrIndex[]>(`${this.baseUrl}/${this.solrIndexApiPath}?${queryParams}`)
+      .get<SolrIndex[]>(`${this.baseUrl}/${this.solrIndexApiPath}${queryParams}`)
       .toPromise();
   }
 
-  refreshSolrIndices(): Promise<void> {
-    return this.http
-      .get<SolrIndex[]>(`${this.baseUrl}/${this.solrIndexApiPath}`)
-      .toPromise()
+  refreshSolrIndicesByIds(ids: string[]): Promise<void> {
+    return this.listSolrIndices(ids, false)
       .then(solrIndices => {
         this.solrIndices = solrIndices;
+        if (solrIndices.length > 0) {
+          this.currentSolrIndexIdSubject.next(solrIndices[0].id);
+        } else {
+          this.currentSolrIndexId = '-1';
+          this.currentSolrIndexIdSubject = new Subject<string>();
+        }
       });
   }
-
-
 
   changeCurrentSolrIndexId(solrIndexId: string) {
     this.currentSolrIndexIdSubject.next(solrIndexId);

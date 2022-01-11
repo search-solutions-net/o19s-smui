@@ -44,10 +44,18 @@ export class UserService {
   }
 
   listUsers(ids: string[]): Promise<Array<User>> {
-    var queryParams = 'id=nonexisting'; // ensures selection on ids is active
-    ids.forEach(s => queryParams += '&id=' + s)
+    var queryParams = '';
+    if (ids.length > 0) {
+      ids.forEach(s => queryParams += '&id=' + s)
+    } else {
+      queryParams += 'id=N/A' // hack to ensure that selection on ids is active
+    }
+    if (queryParams.startsWith('&')) {
+      queryParams = queryParams.substr(1)
+    }
+    queryParams = '?' + queryParams;
     return this.http
-      .get<User[]>(`${this.baseUrl}/${this.userApiPath}?${queryParams}`)
+      .get<User[]>(`${this.baseUrl}/${this.userApiPath}${queryParams}`)
       .toPromise();
   }
 

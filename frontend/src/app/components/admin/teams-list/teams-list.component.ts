@@ -8,7 +8,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 
-import { SolrIndex } from '../../../models';
+import {ApiResult, SolrIndex} from '../../../models';
 import { Team } from '../../../models';
 import {
   TeamService,
@@ -23,9 +23,10 @@ import {
 export class TeamsListComponent implements OnInit, OnChanges {
 
   @Input() teams: Team[];
-  @Input() solrIndices: SolrIndex[];
+  @Input() adminSolrIndices: SolrIndex[];
 
   @Output() openDeleteConfirmModal: EventEmitter<any> = new EventEmitter();
+  @Output() showSuccessMsg: EventEmitter<string> = new EventEmitter();
   @Output() showErrorMsg: EventEmitter<string> = new EventEmitter();
   @Output() teamsChange: EventEmitter<string> = new EventEmitter();
 
@@ -54,7 +55,11 @@ export class TeamsListComponent implements OnInit, OnChanges {
         .deleteTeam(id)
         .then(() => this.listAllTeams().then(teams => this.teams = teams))
         .then(() => this.teamsChange.emit(id))
-        .catch(error => this.showErrorMsg.emit(error));
+        .then(() => this.showSuccessMsg.emit('Team deleted'))
+        .catch(error => {
+          const apiResult = error.error as ApiResult;
+          this.showErrorMsg.emit(apiResult.message);
+        });
 
     this.openDeleteConfirmModal.emit({ deleteCallback });
   }

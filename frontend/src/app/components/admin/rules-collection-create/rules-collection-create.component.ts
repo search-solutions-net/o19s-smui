@@ -8,7 +8,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 
-import { SolrIndex } from '../../../models';
+import {ApiResult, SolrIndex} from '../../../models';
 import {
   SolrService,
   ModalService
@@ -44,11 +44,6 @@ export class RulesCollectionCreateComponent implements OnInit, OnChanges {
     console.log('In RulesCollectionCreateComponent :: ngOnChanges');
   }
 
-  refreshSolrIndicies() {
-    return this.solrService.listAllSolrIndices;
-    //  : Promise.reject('No selected Solr index');
-  }
-
   clearForm() {
     this.name = '';
     this.description = '';
@@ -59,12 +54,14 @@ export class RulesCollectionCreateComponent implements OnInit, OnChanges {
     if (this.name && this.description) {
       this.solrService
         .createSolrIndex(this.name, this.description)
-        .then(() => this.solrService.refreshSolrIndices())
         .then(() => this.solrIndicesChange.emit())
         .then(() => this.showSuccessMsg.emit("Created new Rules Collection " + this.description))
         .then(() => this.solrService.emitRulesCollectionChangeEvent(""))
         .then(() => this.clearForm())
-        .catch(error => this.showErrorMsg.emit(error));
+        .catch(error => {
+          const apiResult = error.error as ApiResult;
+          this.showErrorMsg.emit(apiResult.message);
+        });
     }
   }
 

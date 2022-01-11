@@ -8,7 +8,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 
-import { SolrIndex } from '../../../models';
+import {ApiResult, SolrIndex} from '../../../models';
 import { User } from '../../../models';
 import {
   UserService,
@@ -25,6 +25,7 @@ export class UsersListComponent implements OnInit, OnChanges {
   @Input() users: Array<User> = [];
 
   @Output() openDeleteConfirmModal: EventEmitter<any> = new EventEmitter();
+  @Output() showSuccessMsg: EventEmitter<string> = new EventEmitter();
   @Output() showErrorMsg: EventEmitter<string> = new EventEmitter();
   @Output() usersChange: EventEmitter<string> = new EventEmitter();
 
@@ -56,7 +57,11 @@ export class UsersListComponent implements OnInit, OnChanges {
         .deleteUser(id)
         .then(() => this.listAllUsers().then(users => this.users = users))
         .then(() => this.usersChange.emit(id))
-        .catch(error => this.showErrorMsg.emit(error));
+        .then(() => this.showSuccessMsg.emit('User deleted'))
+        .catch(error => {
+          const apiResult = error.error as ApiResult;
+          this.showErrorMsg.emit(apiResult.message);
+        });
     this.openDeleteConfirmModal.emit({ deleteCallback });
   }
 }
