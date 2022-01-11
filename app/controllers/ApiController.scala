@@ -402,7 +402,10 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       val name = (json \ "name").as[String]
       val email = (json \ "email").as[String]
       val password = (json \ "password").as[String]
-      val admin =  (json \ "admin").as[Boolean]
+      val admin = if (searchManagementRepository.getUserCount() == 0)
+                    true // set first registering user as admin
+                  else
+                    (json \ "admin").as[Boolean]
       try {
         val user = searchManagementRepository.addUser(
           User.create(name = name, email = email, password = Option(password), admin = admin)
