@@ -5,18 +5,20 @@
 -- inspired by https://pedrorijo.com/blog/scala-play-auth/
 
 create table user (
-	id varchar(36) not null primary key,
-	name varchar(50) not null,
-	email varchar(50) not null,
-	password varchar(50) not null,
+  id varchar(36) not null primary key,
+  name varchar(50) not null,
+  email varchar(50) not null,
+  password varchar(128) not null,
+  hash_routine int not null,
   admin int not null,
+  password_change_required int not null,
   last_update timestamp not null
 );
 create unique index user_email_index on user (email);
 
 create table team (
-	id varchar(36) not null primary key,
-	name varchar(50) not null,
+  id varchar(36) not null primary key,
+  name varchar(50) not null,
   last_update timestamp not null
 );
 create unique index team_name_index on team (name);

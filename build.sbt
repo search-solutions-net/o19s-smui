@@ -41,6 +41,7 @@ libraryDependencies ++= {
     jdbc,
     evolutions,
     "org.querqy" % "querqy-core" % "3.7.0", // querqy dependency
+    "io.github.nremond" %% "pbkdf2-scala" % "0.6.5", // pbkdf2-scala implementation
     "net.logstash.logback" % "logstash-logback-encoder" % "5.3", // JSON logging:
     "org.codehaus.janino" % "janino" % "3.0.8", // For using conditions in logback.xml:
     "mysql" % "mysql-connector-java" % "8.0.18", // TODO verify use of mysql-connector over explicit mariaDB connector instead

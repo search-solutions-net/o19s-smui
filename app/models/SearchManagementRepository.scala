@@ -12,10 +12,10 @@ import models.input.{InputTag, InputTagId, PredefinedTag, SearchInput, SearchInp
 import models.spellings.{CanonicalSpelling, CanonicalSpellingId, CanonicalSpellingWithAlternatives}
 import models.eventhistory.{ActivityLog, ActivityLogEntry, InputEvent}
 import models.reports.{ActivityReport, DeploymentLog, RulesReport}
+import services.HashService
 
 @javax.inject.Singleton
-class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureToggleService)(implicit ec: DatabaseExecutionContext) {
-
+class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureToggleService, hashService: HashService)(implicit ec: DatabaseExecutionContext) {
 
   private val db = dbapi.database("default")
 
@@ -326,7 +326,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
   }
 
   def addUser(user: User): User =  db.withConnection { implicit connection =>
-    User.insert(user)
+    User.insert(hashService, user)
     user
   }
 
@@ -339,12 +339,14 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
   }
 
   def updateUser(user: User): Int = db.withConnection { implicit connection =>
-    User.update(user.id, user.name, user.email, user.password, user.admin)
+    User.update(hashService, user.id, user.name, user.email, user.password, user.admin, user.passwordChangeRequired)
   }
 
   def updateUserNameAndPassword(id: String, username: String, password: Option[String]): Int = db.withConnection { implicit connection =>
-    val existingUser = User.getUser(id).getOrElse(User.anonymous())
-    User.update(existingUser.id, username, existingUser.email, password, existingUser.admin)
+    val userOption = User.getUser(id)
+    if (userOption.nonEmpty) {
+      User.update(hashService, userOption.get.id, username, userOption.get.email, password, userOption.get.admin, Option.empty)
+    } else 0
   }
 
   def deleteUser(userId: String): Int = db.withConnection { implicit connection =>
@@ -352,7 +354,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
   }
 
   def isValidEmailPasswordCombo(email: String, password: String): Boolean = db.withConnection { implicit connection =>
-    User.isValidEmailPasswordCombo(email, password)
+    User.isValidEmailPasswordCombo(hashService, email, password)
   }
 
   def lookupUserByEmail(email: String): Option[User] = db.withConnection { implicit connection =>

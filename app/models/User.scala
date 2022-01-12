@@ -4,6 +4,7 @@ import anorm.Column.columnToString
 import anorm.SqlParser.get
 import anorm._
 import play.api.libs.json._
+import services.HashService
 
 import java.sql.Connection
 import java.time.LocalDateTime
@@ -19,18 +20,23 @@ case class User(id: UserId = UserId(),
                     email: String,
                     password: Option[String],
                     admin: Boolean = false,
+                    passwordChangeRequired: Option[Boolean] = Option(false),
                     lastUpdate: Option[LocalDateTime] = Option(LocalDateTime.now())) {
 
   import User._
 
-  def toNamedParameters: Seq[NamedParameter] = Seq(
-    ID -> id,
-    NAME -> name,
-    EMAIL -> email,
-    PASSWORD -> password,
-    ADMIN -> (if (admin) 1 else 0),
-    LAST_UPDATE -> lastUpdate
-  )
+  def toNamedParameters(hashService: HashService): Seq[NamedParameter] = {
+    Seq(
+      ID -> id,
+      NAME -> name,
+      EMAIL -> email,
+      PASSWORD -> getHashedPassword(hashService, password),
+      HASH_ROUTINE_ID -> getHashRoutineId(hashService),
+      ADMIN -> (if (admin) 1 else 0),
+      PASSWORD_CHANGE_REQUIRED -> (if (passwordChangeRequired.getOrElse(false)) 1 else 0),
+      LAST_UPDATE -> lastUpdate
+    )
+  }
 
   def displayValue: String = name + " (" + email + ")"
 
@@ -44,7 +50,9 @@ object User {
   val NAME = "name"
   val EMAIL = "email"
   val PASSWORD = "password"
+  val HASH_ROUTINE_ID = "hash_routine"
   val ADMIN = "admin"
+  val PASSWORD_CHANGE_REQUIRED = "password_change_required"
   val LAST_UPDATE = "last_update"
 
   val USER_ID = "user_id"
@@ -60,31 +68,41 @@ object User {
     Json.obj("displayValue" -> user.displayValue) ++ defaultWrites.writes(user)
   }
 
-  def anonymous(): User = User(UserId(ANONYMOUS_USER_ID), null, null, Option.empty, true, Option(LocalDateTime.now()))
+  def getHashRoutineId(hashService: HashService): Int =
+    if (hashService == null) 0 else hashService.passwordHashRoutineId
+
+  def getHashedPassword(hashService: HashService, password: Option[String]): String =
+    if (hashService == null) password.getOrElse("") else hashService.createPasswordHash(password.getOrElse(""))
+
+  def anonymous(): User = User(UserId(ANONYMOUS_USER_ID), null, null, Option.empty, true, Option(false), Option(LocalDateTime.now()))
 
   def create(name: String,
              email: String,
              password: Option[String],
-             admin: Boolean = false): User = {
-    User(UserId(), name, email, password, admin, Option(LocalDateTime.now()))
+             admin: Boolean = false,
+             passwordChangeRequired: Option[Boolean] = Option(false)): User = {
+    User(UserId(), name, email, password, admin, passwordChangeRequired, Option(LocalDateTime.now()))
   }
 
   val sqlParser: RowParser[User] = get[UserId](s"$TABLE_NAME.$ID") ~
     get[String](s"$TABLE_NAME.$NAME") ~
     get[String](s"$TABLE_NAME.$EMAIL") ~
-    get[String](s"$TABLE_NAME.$PASSWORD") ~
     get[Int](s"$TABLE_NAME.$ADMIN") ~
-    get[LocalDateTime](s"$TABLE_NAME.$LAST_UPDATE") map { case id ~ username ~ email ~ password ~ admin ~ lastUpdate =>
-    User(id, username, email, Option(PASSWORD_MASKED), admin > 0, Option(lastUpdate))
+    get[Int](s"$TABLE_NAME.$PASSWORD_CHANGE_REQUIRED") ~
+    get[LocalDateTime](s"$TABLE_NAME.$LAST_UPDATE") map { case id ~ username ~ email ~ admin ~ passwordChangeRequired ~ lastUpdate =>
+    User(id, username, email, Option(PASSWORD_MASKED), admin > 0, Option(passwordChangeRequired > 0), Option(lastUpdate))
   }
 
-  def insert(newUsers: User*)(implicit connection: Connection): Option[Int] = {
+  val sqlParserPasswordWithRoutine: RowParser[(String,Int)] = get[String](s"$TABLE_NAME.$PASSWORD") ~
+    get[Int](s"$TABLE_NAME.$HASH_ROUTINE_ID") map { case password ~ routineId => (password, routineId)}
+
+  def insert(hashService: HashService, newUsers: User*)(implicit connection: Connection): Option[Int] = {
     var result: Array[Int]  = Array[Int]();
     if (newUsers.nonEmpty) {
-      result = BatchSql(s"insert into $TABLE_NAME ($ID, $NAME, $EMAIL, $PASSWORD, $ADMIN, $LAST_UPDATE) " +
-        s"values ({$ID}, {$NAME}, {$EMAIL}, {$PASSWORD}, {$ADMIN}, {$LAST_UPDATE})",
-        newUsers.head.toNamedParameters,
-        newUsers.tail.map(_.toNamedParameters): _*
+      result = BatchSql(s"insert into $TABLE_NAME ($ID, $NAME, $EMAIL, $PASSWORD, $HASH_ROUTINE_ID, $ADMIN, $PASSWORD_CHANGE_REQUIRED, $LAST_UPDATE) " +
+        s"values ({$ID}, {$NAME}, {$EMAIL}, {$PASSWORD}, {$HASH_ROUTINE_ID}, {$ADMIN}, {$PASSWORD_CHANGE_REQUIRED}, {$LAST_UPDATE})",
+        newUsers.head.toNamedParameters(hashService),
+        newUsers.tail.map(_.toNamedParameters(hashService)): _*
       ).execute()
     }
     result.headOption
@@ -107,13 +125,21 @@ object User {
       .as(SqlParser.int(1).single)
   }
 
-  def update(id: UserId, username: String, email: String, password: Option[String], admin: Boolean)(implicit connection: Connection): Int = {
+  def update(hashService: HashService, id: UserId, username: String, email: String, password: Option[String], admin: Boolean, passwordChangeRequired: Option[Boolean])(implicit connection: Connection): Int = {
     val adminInt = if (admin) 1 else 0
-    if (password.nonEmpty) {
-      val newPassword = password.get
-      SQL"update #$TABLE_NAME set #$NAME = $username, #$EMAIL = $email, #$PASSWORD = $newPassword, #$ADMIN = $adminInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
-    } else
-      SQL"update #$TABLE_NAME set #$NAME = $username, #$EMAIL = $email, #$ADMIN = $adminInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
+    val passwordChangeRequiredInt = if (passwordChangeRequired.getOrElse(false)) 1 else 0
+    val result =
+      if (passwordChangeRequired.nonEmpty) {
+        SQL"update #$TABLE_NAME set #$NAME = $username, #$EMAIL = $email, #$ADMIN = $adminInt, #$PASSWORD_CHANGE_REQUIRED = $passwordChangeRequiredInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
+      } else {
+        SQL"update #$TABLE_NAME set #$NAME = $username, #$EMAIL = $email, #$ADMIN = $adminInt, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
+      }
+    if (result > 0 && password.nonEmpty) {
+      val newPassword = getHashedPassword(hashService, password)
+      val hashRoutineId = getHashRoutineId(hashService)
+      SQL"update #$TABLE_NAME set #$NAME = $username, #$PASSWORD = $newPassword, #$HASH_ROUTINE_ID = $hashRoutineId, #$LAST_UPDATE = ${LocalDateTime.now()} where #$ID = $id".executeUpdate()
+    }
+    result
   }
 
   def deleteByIds(ids: Seq[UserId])(implicit connection: Connection): Int = {
@@ -129,9 +155,15 @@ object User {
       .as(sqlParser.*).headOption
   }
 
-  def isValidEmailPasswordCombo(email: String, password: String)(implicit connection: Connection): Boolean = {
-    SQL"select count(*) from #$TABLE_NAME where #$EMAIL = $email and #$PASSWORD=$password"
-      .as(SqlParser.int(1).single) > 0
+  def isValidEmailPasswordCombo(hashService: HashService, email: String, password: String)(implicit connection: Connection): Boolean = {
+    val p = SQL"select #$PASSWORD, #$HASH_ROUTINE_ID from #$TABLE_NAME where #$EMAIL = $email order by #$NAME asc"
+      .as(sqlParserPasswordWithRoutine.*).headOption
+    if (p.nonEmpty) {
+      val (passwordHash, hashroutineId) = p.get
+      hashService.validatePassword(hashroutineId, password, passwordHash)
+    } else {
+      false
+    }
   }
 
   def getUser2Team(selectId: String, isLeftToRight: Boolean)(implicit connection: Connection): List[String] = {

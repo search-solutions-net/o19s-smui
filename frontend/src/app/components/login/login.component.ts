@@ -75,7 +75,7 @@ export class LoginComponent implements OnInit {
                   this.showErrorMsg("Invalid email/password combination");
                   this.clearForm();
                 } else {
-                  this.showSuccessMsg("Logged in as " + user.email);
+                  this.showSuccessMsg("Logged in as " + this.email);
                   this.configService.getAuthInfo().then(r => {
                       if (this.configService.isLoggedIn()) {
                         window.location.reload();

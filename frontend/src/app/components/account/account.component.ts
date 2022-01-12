@@ -67,6 +67,7 @@ export class AccountComponent implements OnInit {
             this.configService.getAuthInfo();
             this.showSuccessMsg("Account updated for " + this.email);
             this.currentName = this.name;
+            this.clearForm(false);
           })
           .catch(error => {
             const apiResult = error.error as ApiResult;

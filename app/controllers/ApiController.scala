@@ -423,7 +423,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
                     (json \ "admin").as[Boolean]
       try {
         val user = searchManagementRepository.addUser(
-          User.create(name = name, email = email, password = Option(password), admin = admin)
+          User.create(name = name, email = email, password = Option(password), admin = admin, Option(false))
         )
         Ok(Json.toJson(user))
       } catch {
@@ -448,15 +448,13 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
         val updateResult =
           if (!currentUser.admin) { // non admin can only set name and password
             val name = (json \ "name").as[String]
-            val password = (json \ "password").as[String]
-            searchManagementRepository.updateUserNameAndPassword(userId, name, Option(password))
+            val password = json.as((__ \ "password").readNullable[String])
+            searchManagementRepository.updateUserNameAndPassword(userId, name, password)
           } else {
             val user = json.as[User]
             if (user.id.id == userId) {
               searchManagementRepository.updateUser(user)
-            } else {
-              -1
-            }
+            } else -1
           }
         if (updateResult > 0) {
           Ok(Json.toJson(ApiResult(API_RESULT_OK, "Updating user successful.", Some(UserId(userId)))))
