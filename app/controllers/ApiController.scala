@@ -23,6 +23,7 @@ import models.input.{InputTagId, InputValidator, ListItem, SearchInputId, Search
 import models.querqy.QuerqyRulesTxtGenerator
 import models.spellings.{CanonicalSpellingId, CanonicalSpellingValidator, CanonicalSpellingWithAlternatives}
 import play.api.Configuration
+import org.checkerframework.checker.units.qual.A
 import services.{RulesTxtDeploymentService, RulesTxtImportService}
 
 import java.sql.SQLIntegrityConstraintViolationException
@@ -671,10 +672,16 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       }
   }
   private def lookupUserInfo(request: Request[AnyContent]) = {
-    val userInfo: Option[String] = request match {
-      case _: UserRequest[A] => Option(request.asInstanceOf[UserRequest[A]].username)
-      case _ => None
-    }
+    val userOption = authActionFactory.getCurrentUser(request);
+    val userInfo: Option[String] =
+      if (userOption.nonEmpty) {
+        Option(userOption.get.email)
+      } else {
+        request match {
+          case _: UserRequest[A] => Option(request.asInstanceOf[UserRequest[A]].username)
+          case _ => None
+        }
+      }
     userInfo
   }
 
