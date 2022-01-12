@@ -17,15 +17,15 @@ class UserSpec extends FlatSpec with Matchers with BeforeAndAfterEach with WithI
   )
 
   // Accuracy of lastUpdate before/after database insert should omit nano seconds
-  def adjustedTimeAccuracy(users: Seq[User]): Seq[User] = users.map(user =>
-    user.copy(lastUpdate = Option(user.lastUpdate.get.withNano(0)))
+  def adjustedPasswordAndTimeAccuracy(users: Seq[User]): Seq[User] = users.map(user =>
+    user.copy(password = Option(User.PASSWORD_MASKED), lastUpdate = Option(user.lastUpdate.get.withNano(0)))
   )
 
   "User" should "be saved to the database and read out again" in {
     db.withConnection { implicit connection =>
       User.insert(hashService, users: _*)
       val loaded = User.getUsers(Seq())
-      adjustedTimeAccuracy(loaded).toSet shouldBe adjustedTimeAccuracy(users).toSet
+      adjustedPasswordAndTimeAccuracy(loaded).toSet shouldBe adjustedPasswordAndTimeAccuracy(users).toSet
     }
 
   }
