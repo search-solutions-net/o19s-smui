@@ -181,4 +181,5 @@ export class SolrService {
       .put<ApiResult>(`${this.baseUrl}/${this.solrIndexApiPath}`, body, httpOptions)
       .toPromise();
   }
+
 }

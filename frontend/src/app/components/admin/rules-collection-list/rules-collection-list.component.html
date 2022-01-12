@@ -5,22 +5,22 @@
     <h6 class="card-subtitle mb-2 text-muted">Available Rules Collections in SMUI</h6>
 
     <ul *ngFor="let solrIndex of adminSolrIndices" class="list-group smui-search-input-list">
-        <li class="list-group-item">
-          {{ solrIndex.description }} ({{ solrIndex.name }})
-          <div class="float-right">
-            <button class="btn btn-primary btn-sm"
-                    [routerLink]="['/admin/suggested-fields/', solrIndex.id.toUpperCase()]"
-            >Configure</button>
-            &nbsp;
-            <button
-              type="button"
-              class="btn btn-danger btn-sm"
-              (click)="deleteRulesCollection(solrIndex.id, $event)"
-            >
-              <i class="fa fa-minus" aria-hidden="true"></i>
-            </button>
-          </div>
-        </li>
+      <li class="list-group-item">
+        {{ solrIndex.description }} ({{ solrIndex.name }})
+        <div class="float-right">
+          <button class="btn btn-primary btn-sm"
+                  [routerLink]="['/admin/suggested-fields/', solrIndex.id.toUpperCase()]"
+          >Configure</button>
+          &nbsp;
+          <button
+            type="button"
+            class="btn btn-danger btn-sm"
+            (click)="deleteRulesCollection(solrIndex.id, $event)"
+          >
+            <i class="fa fa-minus" aria-hidden="true"></i>
+          </button>
+        </div>
+      </li>
     </ul>
   </div>
 </div>

@@ -3,7 +3,6 @@ package models
 import java.io.FileInputStream
 import java.time.LocalDateTime
 import java.util.{Date, UUID}
-
 import javax.inject.Inject
 import play.api.db.DBApi
 import anorm._
@@ -13,9 +12,10 @@ import models.spellings.{CanonicalSpelling, CanonicalSpellingId, CanonicalSpelli
 import models.eventhistory.{ActivityLog, ActivityLogEntry, InputEvent}
 import models.reports.{ActivityReport, DeploymentLog, RulesReport}
 import services.HashService
+import play.api.Logging
 
 @javax.inject.Singleton
-class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureToggleService, hashService: HashService)(implicit ec: DatabaseExecutionContext) {
+class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureToggleService, hashService: HashService)(implicit ec: DatabaseExecutionContext) extends Logging {
 
   private val db = dbapi.database("default")
 
@@ -45,8 +45,8 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     SolrIndex.loadNameById(solrIndexId)
   }
 
-  def getSolrIndex(solrIndexId: String): Option[SolrIndex] = db.withConnection { implicit connection =>
-    SolrIndex.getSolrIndexes(Seq(solrIndexId)).headOption
+  def getSolrIndex(id: String): Option[SolrIndex] = db.withConnection { implicit connection =>
+    SolrIndex.getSolrIndexes(Seq(id)).headOption
   }
 
   def addNewSolrIndex(newSolrIndex: SolrIndex): SolrIndexId = db.withConnection { implicit connection =>
@@ -85,6 +85,8 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
       throw new Exception("Can't delete rules collection that is linked to " + teamIds.size + " team(s): " + teamNames);
     }
 
+    // TODO consider reconfirmation and deletion of history entries (if some exist) (see https://github.com/querqy/smui/issues/97)
+
     val id = SolrIndex.delete(solrIndexId)
 
     id
@@ -118,7 +120,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     * Canonical spellings and alternative spellings
     */
 
-  def addNewCanonicalSpelling(solrIndexId: SolrIndexId, term: String): CanonicalSpelling =
+  def addNewCanonicalSpelling(solrIndexId: SolrIndexId, term: String, userInfo: Option[String]): CanonicalSpelling =
     db.withConnection { implicit connection =>
       val spelling = CanonicalSpelling.insert(solrIndexId, term)
 
@@ -126,7 +128,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
       if (toggleService.getToggleActivateEventHistory) {
         InputEvent.createForSpelling(
           spelling.id,
-          None, // TODO userInfo not being logged so far
+          userInfo,
           false
         )
       }
@@ -139,7 +141,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
       CanonicalSpellingWithAlternatives.loadById(CanonicalSpellingId(canonicalSpellingId))
     }
 
-  def updateSpelling(spelling: CanonicalSpellingWithAlternatives): Unit =
+  def updateSpelling(spelling: CanonicalSpellingWithAlternatives, userInfo: Option[String]): Unit =
     db.withTransaction { implicit connection =>
       CanonicalSpellingWithAlternatives.update(spelling)
 
@@ -147,7 +149,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
       if (toggleService.getToggleActivateEventHistory) {
         InputEvent.updateForSpelling(
           spelling.id,
-          None // TODO userInfo not being logged so far
+          userInfo
         )
       }
     }
@@ -162,7 +164,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
       CanonicalSpellingWithAlternatives.loadAllForIndex(solrIndexId)
     }
 
-  def deleteSpelling(canonicalSpellingId: String): Int =
+  def deleteSpelling(canonicalSpellingId: String, userInfo: Option[String]): Int =
     db.withTransaction { implicit connection =>
       val id = CanonicalSpellingId(canonicalSpellingId)
       val count = CanonicalSpellingWithAlternatives.delete(id)
@@ -171,7 +173,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
       if (toggleService.getToggleActivateEventHistory) {
         InputEvent.deleteForSpelling(
           id,
-          None // TODO userInfo not being logged so far
+          userInfo
         )
       }
 
@@ -185,7 +187,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
   /**
     * Adds new Search Input (term) to the database table. This method only focuses the term, and does not care about any synonyms.
     */
-  def addNewSearchInput(solrIndexId: SolrIndexId, searchInputTerm: String, tags: Seq[InputTagId]): SearchInputId = db.withConnection { implicit connection =>
+  def addNewSearchInput(solrIndexId: SolrIndexId, searchInputTerm: String, tags: Seq[InputTagId], userInfo: Option[String]): SearchInputId = db.withConnection { implicit connection =>
 
     // add search input
     val id = SearchInput.insert(solrIndexId, searchInputTerm).id
@@ -197,7 +199,7 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     if (toggleService.getToggleActivateEventHistory) {
       InputEvent.createForSearchInput(
         id,
-        None, // TODO userInfo not being logged so far
+        userInfo,
         false
       )
     }
@@ -209,26 +211,26 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     SearchInputWithRules.loadById(searchInputId)
   }
 
-  def updateSearchInput(searchInput: SearchInputWithRules): Unit = db.withTransaction { implicit connection =>
+  def updateSearchInput(searchInput: SearchInputWithRules, userInfo: Option[String]): Unit = db.withTransaction { implicit connection =>
     SearchInputWithRules.update(searchInput)
 
     // add UPDATED event for search input and rules
     if (toggleService.getToggleActivateEventHistory) {
       InputEvent.updateForSearchInput(
         searchInput.id,
-        None // TODO userInfo not being logged so far
+        userInfo
       )
     }
   }
 
-  def deleteSearchInput(searchInputId: String): Int = db.withTransaction { implicit connection =>
+  def deleteSearchInput(searchInputId: String, userInfo: Option[String]): Int = db.withTransaction { implicit connection =>
     val id = SearchInputWithRules.delete(SearchInputId(searchInputId))
 
     // add DELETED event for search input and rules
     if (toggleService.getToggleActivateEventHistory) {
       InputEvent.deleteForSearchInput(
         SearchInputId(searchInputId),
-        None // TODO userInfo not being logged so far
+        userInfo
       )
     }
 
