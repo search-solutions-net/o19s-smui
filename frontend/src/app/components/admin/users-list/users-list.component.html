@@ -4,10 +4,12 @@
     <h6 class="card-subtitle mb-2 text-muted">Available Users in SMUI</h6>
 
     <ul *ngFor="let user of users" class="list-group smui-search-input-list">
-        <li class="list-group-item">
+        <li
+          class="list-group-item"
+          [ngClass]="{ 'bg-light font-bolder': currentUser.id == user.id }"
+        >
           {{ user.email }} - {{ user.name }}
           <span *ngIf="user.admin"> (Administrator)</span>
-
           <button
             type="button"
             class="btn btn-danger btn-sm float-right"

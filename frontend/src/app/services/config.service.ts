@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import {SmuiVersionInfo, AuthInfoModel} from '../models';
+import {SmuiVersionInfo, AuthInfoModel, User} from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -48,7 +48,11 @@ export class ConfigService {
   }
 
   isAdminUser(): boolean {
-    return this.authInfo !== undefined && this.authInfo.currentUser.admin
+    return this.getCurrentUser().admin
+  }
+
+  getCurrentUser(): User {
+    return this.authInfo !== undefined ? this.authInfo.currentUser : new User()
   }
 
 }

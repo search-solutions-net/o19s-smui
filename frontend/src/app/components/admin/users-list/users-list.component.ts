@@ -23,6 +23,7 @@ import {
 export class UsersListComponent implements OnInit, OnChanges {
 
   @Input() users: Array<User> = [];
+  @Input() currentUser: User;
 
   @Output() openDeleteConfirmModal: EventEmitter<any> = new EventEmitter();
   @Output() showSuccessMsg: EventEmitter<string> = new EventEmitter();

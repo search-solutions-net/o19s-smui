@@ -22,6 +22,10 @@ export class UsersCreateComponent implements OnInit, OnChanges {
 
   @Output() showErrorMsg: EventEmitter<string> = new EventEmitter();
   @Output() showSuccessMsg: EventEmitter<string> = new EventEmitter();
+  @Output() nameChange: EventEmitter<string> = new EventEmitter();
+  @Output() emailChange: EventEmitter<string> = new EventEmitter();
+  @Output() passwordChange: EventEmitter<string> = new EventEmitter();
+  @Output() adminChange: EventEmitter<string> = new EventEmitter();
   @Output() usersChange: EventEmitter<string> = new EventEmitter();
 
   solrIndices: SolrIndex[];
@@ -51,7 +55,7 @@ export class UsersCreateComponent implements OnInit, OnChanges {
     this.admin = false;
   }
 
-  createUser( event: Event){
+  createUser(event: Event){
     console.log('In UsersCreateComponent :: createUser');
     if (this.admin == null){
       this.admin = false;

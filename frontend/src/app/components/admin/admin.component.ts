@@ -33,10 +33,12 @@ export class AdminComponent implements OnInit {
   adminSolrIndices: SolrIndex[];
   teams: Team[];
   users: User[];
+  currentUser: User;
 
   ngOnInit() {
     console.log('In AdminComponent :: ngOnInit');
     this.isAdminUser = this.configService.isAdminUser();
+    this.currentUser = this.configService.getCurrentUser();
     this.solrService.listAllSolrIndices()
       .then(solrIndices => this.adminSolrIndices = solrIndices)
       .catch(error => this.showApiErrorMsg(error.error));

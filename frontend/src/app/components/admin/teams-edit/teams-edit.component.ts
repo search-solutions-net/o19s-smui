@@ -140,7 +140,7 @@ export class TeamsEditComponent implements OnInit, OnChanges {
 
   lookupNonTeamSolrIndices() {
     const teamSolrIndexIdsSet = new Set(this.teamSolrIndexIds);
-    this.nonTeamSolrIndices = this.adminSolrIndices.filter((solrIndex) => {
+    this.nonTeamSolrIndices = this.adminSolrIndices && this.adminSolrIndices.filter((solrIndex) => {
         return !teamSolrIndexIdsSet.has(solrIndex.id);
       });
   }
