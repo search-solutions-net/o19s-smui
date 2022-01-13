@@ -1,7 +1,7 @@
 import com.typesafe.sbt.GitBranchPrompt
 
 name := "search-management-ui"
-version := "SNAPSHOT.3.14.0"
+version := "SNAPSHOT.3.14"
 
 scalaVersion := "2.12.11"
 
