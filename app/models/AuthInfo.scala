@@ -12,6 +12,7 @@ case class AuthInfo(currentUser: User,
                     solrIndices: List[String],
                     isLoginRequired: Boolean,
                     isLoggedIn: Boolean,
+                    isPasswordChangeRequired: Boolean,
                     authAction: String
                         ) {
 }
@@ -29,9 +30,10 @@ object AuthInfo {
              solrIndices: List[String],
              isLoginRequired: Boolean,
              isLoggedIn: Boolean,
+             isPasswordChangeRequired: Boolean,
              authAction: String
             ): AuthInfo = {
-    AuthInfo(currentUser, unique(teams), unique(solrIndices), isLoginRequired, isLoggedIn, authAction)
+    AuthInfo(currentUser, unique(teams), unique(solrIndices), isLoginRequired, isLoggedIn, isPasswordChangeRequired, authAction)
   }
 
   def unique[A](ls: List[A]) = {

@@ -59,7 +59,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       id
     val solrIndices: List[SolrIndex] = searchManagementRepository.getSolrIndexes(ids)
     if (optionAll.getOrElse(false)) {
-      if (authInfo.currentUser.admin) {
+      if (isCurrentUserAdmin(request)) {
         Ok(Json.toJson(solrIndices))
       } else {
         BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Request to display all rules collections only valid for administrator user", None)))
@@ -401,6 +401,14 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
     }
   }
 
+  private def isCurrentUserAnonymous(request: Request[AnyContent]): Boolean = {
+    User.ANONYMOUS_USER_ID.equals(getAuthInfoInternal(request).currentUser.id.id)
+  }
+
+  private def isCurrentUserAdmin(request: Request[AnyContent]): Boolean = {
+    !isCurrentUserAnonymous(request) && getAuthInfoInternal(request).currentUser.admin
+  }
+
   private def getAuthInfoInternal(request: Request[AnyContent]): AuthInfo = {
     val user: User = authActionFactory.getCurrentUser(request).getOrElse(User.anonymous())
     val teams = searchManagementRepository.lookupTeamIdsByUserId(user.id.id)
@@ -412,6 +420,7 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
       solrIndices,
       authActionFactory.getAuthenticatedAction(Action).isInstanceOf[UsernamePasswordAuthenticatedAction],
       !User.ANONYMOUS_USER_ID.equals(user.id.id),
+      user.passwordChangeRequired.getOrElse(false),
       appConfig.getOptional[String]("smui.authAction").getOrElse("")
     )
   }
@@ -429,8 +438,10 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
                   else
                     (json \ "admin").as[Boolean]
       try {
+        // set password change required when added by an admin
+        val passwordChangeRequired = Option(isCurrentUserAdmin(request))
         val user = searchManagementRepository.addUser(
-          User.create(name = name, email = email, password = Option(password), admin = admin, Option(false))
+          User.create(name = name, email = email, password = Option(password), admin = admin, passwordChangeRequired)
         )
         Ok(Json.toJson(user))
       } catch {
@@ -446,17 +457,19 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
   def updateUser(userId: String): Action[AnyContent] = authActionFactory.getAuthenticatedAction(Action) { request: Request[AnyContent] =>
     val body: AnyContent = request.body
     val jsonBody: Option[JsValue] = body.asJson
-    // ensure a non-admin can only update his own user profile
     val currentUser = authActionFactory.getCurrentUser(request).getOrElse(User.anonymous())
-    if (!currentUser.admin && currentUser.id.id != userId) {
+    // ensure a non-admin user can only update his own user profile
+    if (isCurrentUserAnonymous(request)
+      || (!isCurrentUserAdmin(request) && currentUser.id.id != userId)) {
       BadRequest(Json.toJson(ApiResult(API_RESULT_FAIL, "Updating another user by a non admin user is not allowed.", None)))
     } else {
       jsonBody.map { json =>
         val updateResult =
-          if (!currentUser.admin) { // non admin can only set name and password
+          if (!isCurrentUserAdmin(request)) { // non admin can only set name and password
             val name = (json \ "name").as[String]
             val password = json.as((__ \ "password").readNullable[String])
-            searchManagementRepository.updateUserNameAndPassword(userId, name, password)
+            val passwordChangeRequired = json.as((__ \ "passwordChangeRequired").readNullable[Boolean])
+            searchManagementRepository.updateUserNameAndPassword(userId, name, password, passwordChangeRequired)
           } else {
             val user = json.as[User]
             if (user.id.id == userId) {
@@ -471,9 +484,9 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
               ApiResult(
                 API_RESULT_FAIL,
                 if (updateResult == -1)
-                  "Updating user failed. User not found."
+                  "User id in body doesn't correspond to user id of request"
                 else
-                  "User id in body doesn't correspond to user id of request",
+                  "Updating user failed. User not found.",
                 None
               )
             )

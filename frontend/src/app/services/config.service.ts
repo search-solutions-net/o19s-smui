@@ -43,6 +43,10 @@ export class ConfigService {
     return  !this.isLoginRequired() || (this.authInfo !== undefined && this.authInfo.isLoggedIn)
   }
 
+  isPasswordChangeRequired(): boolean {
+    return  this.isLoggedIn() && this.authInfo !== undefined && this.authInfo.isPasswordChangeRequired
+  }
+
   isAdminUser(): boolean {
     return this.authInfo !== undefined && this.authInfo.currentUser.admin
   }

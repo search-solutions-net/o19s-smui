@@ -11,11 +11,11 @@
     <div class="smui-loading-spinner"></div>
   </div>
 
-  <div *ngIf="isInitialized && !isLoggedIn">
+  <div *ngIf="isInitialized && (!isLoggedIn || isPasswordChangeRequired)">
     <app-smui-login></app-smui-login>
   </div>
 
-  <div *ngIf="isLoggedIn">
+  <div *ngIf="isLoggedIn && !isPasswordChangeRequired">
     <app-smui-header-nav></app-smui-header-nav>
     <router-outlet></router-outlet>
   </div>

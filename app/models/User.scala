@@ -20,7 +20,7 @@ case class User(id: UserId = UserId(),
                     email: String,
                     password: Option[String],
                     admin: Boolean = false,
-                    passwordChangeRequired: Option[Boolean] = Option(false),
+                    passwordChangeRequired: Option[Boolean],
                     lastUpdate: Option[LocalDateTime] = Option(LocalDateTime.now())) {
 
   import User._

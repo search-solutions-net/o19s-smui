@@ -18,6 +18,7 @@ export class AppComponent implements OnInit {
   toasterConfig: ToasterConfig = new ToasterConfig(toasterOptions);
   isInitialized = false;
   isLoggedIn = false;
+  isPasswordChangeRequired = false;
   errors: string[] = [];
 
   constructor(
@@ -42,6 +43,7 @@ export class AppComponent implements OnInit {
             this.initSolrIndices()
           ]).then(() => {
             this.isLoggedIn = this.configService.isLoggedIn();
+            this.isPasswordChangeRequired = this.configService.isPasswordChangeRequired();
             console.log('In AppComponent :: ngOnInit :: isLoggedIn = ' + this.configService.isLoggedIn() + ' authInfo = ' + this.configService.authInfo?.currentUser.id);
           });
         }

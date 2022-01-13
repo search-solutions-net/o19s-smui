@@ -13,5 +13,6 @@ export class AuthInfoModel {
   solrIndices: string[];
   isLoginRequired: boolean;
   isLoggedIn: boolean;
+  isPasswordChangeRequired: boolean;
   authAction: string;
 }

@@ -78,8 +78,8 @@ export class UserService {
       .toPromise();
   }
 
-  updateUser(id: string, name: string, email: string, password: string | null, admin: boolean): Promise<User> {
-    const body = JSON.stringify( { id: id, name: name, email: email, password: password, admin:admin });
+  updateUser(id: string, name: string, email: string, password: string | null, admin: boolean, passwordChangeRequired: boolean | null): Promise<User> {
+    const body = JSON.stringify( { id: id, name: name, email: email, password: password, admin:admin, passwordChangeRequired: passwordChangeRequired});
     return this.http
       .post<User>(`${this.baseUrl}/${this.userApiPath}/${id}`, body, httpOptions)
       .toPromise();

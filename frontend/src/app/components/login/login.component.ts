@@ -28,6 +28,8 @@ export class LoginComponent implements OnInit {
   @Output() signupEmailChange: EventEmitter<string> = new EventEmitter();
   @Output() signupPasswordChange: EventEmitter<string> = new EventEmitter();
   @Output() signupPassword2Change: EventEmitter<string> = new EventEmitter();
+  @Output() changePasswordChange: EventEmitter<string> = new EventEmitter();
+  @Output() changePassword2Change: EventEmitter<string> = new EventEmitter();
 
   versionInfo?: SmuiVersionInfo;
   password: string;
@@ -36,12 +38,14 @@ export class LoginComponent implements OnInit {
   signupEmail: string;
   signupPassword: string;
   signupPassword2: string;
+  changePassword: string;
+  changePassword2: string;
 
   constructor(
     private toasterService: ToasterService,
     public featureToggleService: FeatureToggleService,
     private userService: UserService,
-    private configService: ConfigService,
+    public configService: ConfigService,
     public router: Router,
     public modalService: ModalService
   ) {
@@ -56,6 +60,8 @@ export class LoginComponent implements OnInit {
     this.password = '';
     this.signupPassword = '';
     this.signupPassword2 = '';
+    this.changePassword = '';
+    this.changePassword2 = '';
   }
 
   public showSuccessMsg(msgText: string) {
@@ -115,6 +121,35 @@ export class LoginComponent implements OnInit {
                       })
                       .catch(error => this.showErrorMsg(error));
             }
+          })
+          .catch(error => {
+            const apiResult = error.error as ApiResult;
+            this.showErrorMsg(apiResult.message);
+          });
+      }
+    } else {
+      this.showErrorMsg("Please enter info for all fields!")
+    }
+  }
+
+  requestPasswordChange() {
+    console.log('In LoginComponent :: requestPasswordChange');
+    if (this.changePassword && this.changePassword2) {
+      if (this.changePassword !== this.changePassword2) {
+        this.showErrorMsg("Password and confirmation password don't match!")
+        this.clearForm();
+      } else {
+        this.userService.updateUser(
+          this.configService.authInfo.currentUser.id,
+          this.configService.authInfo.currentUser.name,
+          this.configService.authInfo.currentUser.email,
+          this.changePassword,
+          this.configService.authInfo.currentUser.admin,
+          false
+        )
+          .then(() => {
+            this.showSuccessMsg("Password updated");
+            window.location.reload();
           })
           .catch(error => {
             const apiResult = error.error as ApiResult;

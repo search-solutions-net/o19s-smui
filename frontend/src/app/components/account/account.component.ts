@@ -61,7 +61,8 @@ export class AccountComponent implements OnInit {
           this.name,
           this.configService.authInfo.currentUser.email,
           newPassword,
-          this.configService.authInfo.currentUser.admin
+          this.configService.authInfo.currentUser.admin,
+          newPassword == null ? null : false
         )
           .then(() => {
             this.configService.getAuthInfo();

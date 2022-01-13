@@ -329,10 +329,10 @@ class SearchManagementRepository @Inject()(dbapi: DBApi, toggleService: FeatureT
     User.update(hashService, user.id, user.name, user.email, user.password, user.admin, user.passwordChangeRequired)
   }
 
-  def updateUserNameAndPassword(id: String, username: String, password: Option[String]): Int = db.withConnection { implicit connection =>
+  def updateUserNameAndPassword(id: String, username: String, password: Option[String], passwordChangeRequired: Option[Boolean]): Int = db.withConnection { implicit connection =>
     val userOption = User.getUser(id)
     if (userOption.nonEmpty) {
-      User.update(hashService, userOption.get.id, username, userOption.get.email, password, userOption.get.admin, Option.empty)
+      User.update(hashService, userOption.get.id, username, userOption.get.email, password, userOption.get.admin, passwordChangeRequired)
     } else 0
   }
 
