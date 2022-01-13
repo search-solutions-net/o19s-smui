@@ -15,10 +15,10 @@ import {
 } from '../../../services';
 
 @Component({
-  selector: 'app-smui-admin-teams-create',
-  templateUrl: './teams-create.component.html'
+  selector: 'app-smui-admin-team-create',
+  templateUrl: './team-create.component.html'
 })
-export class TeamsCreateComponent implements OnInit, OnChanges {
+export class TeamCreateComponent implements OnInit, OnChanges {
 
   //@Output() updateRulesCollectionList: EventEmitter<> = new EventEmitter();
   @Output() showErrorMsg: EventEmitter<string> = new EventEmitter();

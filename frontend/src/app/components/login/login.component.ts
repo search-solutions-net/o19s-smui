@@ -103,7 +103,7 @@ export class LoginComponent implements OnInit {
         this.showErrorMsg("Password and confirmation password don't match!")
         this.clearForm();
       } else {
-        this.userService.createUser(this.signupName, this.signupEmail, this.signupPassword, false)
+        this.userService.createUser(this.signupName, this.signupEmail, this.signupPassword, false, false)
                 .then(user => {
                   if (user == undefined) {
                     this.showErrorMsg("Could not signup your user!")

@@ -20,10 +20,10 @@ import {
 import {ActivatedRoute, ParamMap, Router} from "@angular/router";
 
 @Component({
-  selector: 'app-smui-admin-teams-edit',
-  templateUrl: './teams-edit.component.html'
+  selector: 'app-smui-admin-team-edit',
+  templateUrl: './team-edit.component.html'
 })
-export class TeamsEditComponent implements OnInit, OnChanges {
+export class TeamEditComponent implements OnInit, OnChanges {
 
   @Output() teamChange: EventEmitter<string> = new EventEmitter();
   @Output() userChange: EventEmitter<string> = new EventEmitter();
@@ -53,7 +53,7 @@ export class TeamsEditComponent implements OnInit, OnChanges {
   }
 
   ngOnInit() {
-    console.log('In TeamsEditComponent :: ngOnInit');
+    console.log('In TeamEditComponent :: ngOnInit');
     this.route.paramMap.subscribe((params: ParamMap) => {
       this.teamService.getTeam(params.get("teamId")!)
         .then(team => {
@@ -71,7 +71,7 @@ export class TeamsEditComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('In TeamsEditComponent :: ngOnChanges');
+    console.log('In TeamEditComponent :: ngOnChanges');
   }
 
   public showSuccessMsg(msgText: string) {
@@ -169,7 +169,7 @@ export class TeamsEditComponent implements OnInit, OnChanges {
   }
 
   addSolrIndexToTeam(solrIndexId: string){
-    console.log('In TeamsEditComponent :: addSolrIndexToTeam ' + solrIndexId);
+    console.log('In TeamEditComponent :: addSolrIndexToTeam ' + solrIndexId);
     if (solrIndexId != "DEFAULT") {
       this.teamService.addSolrIndexToTeam(solrIndexId, this.team.id)
         .then(() => this.lookupTeamSolrIndices())
@@ -181,7 +181,7 @@ export class TeamsEditComponent implements OnInit, OnChanges {
   }
 
   updateTeam(){
-    console.log('In TeamsEditComponent :: updateTeam');
+    console.log('In TeamEditComponent :: updateTeam');
     if (this.team.name) {
       this.teamService.updateTeam(this.team)
         .then(() => this.teamChange.emit())

@@ -38,10 +38,11 @@ import {
   RulesCollectionListComponent,
   RulesCollectionCreateComponent,
   TeamsListComponent,
-  TeamsCreateComponent,
-  TeamsEditComponent,
+  TeamCreateComponent,
+  TeamEditComponent,
   UsersListComponent,
-  UsersCreateComponent
+  UserCreateComponent,
+  UserEditComponent
 } from './components/admin';
 import { AccountComponent } from './components/account';
 import { LoginComponent } from './components/login';
@@ -106,10 +107,11 @@ import {
     SuggestedFieldsComponent,
     SuggestedFieldsCreateComponent,
     SuggestedFieldsListComponent,
-    TeamsCreateComponent,
-    TeamsEditComponent,
+    TeamCreateComponent,
+    TeamEditComponent,
     TeamsListComponent,
-    UsersCreateComponent,
+    UserCreateComponent,
+    UserEditComponent,
     UsersListComponent
   ],
   providers: [

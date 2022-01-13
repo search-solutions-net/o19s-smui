@@ -4,12 +4,12 @@
     <a ngbNavLink>Teams</a>
     <ng-template ngbNavContent>
 
-      <app-smui-admin-teams-create
+      <app-smui-admin-team-create
         (showSuccessMsg)="showSuccessMsg($event)"
         (showErrorMsg)="showErrorMsg($event)"
         (teamsChange)="teamsChange()"
       >
-      </app-smui-admin-teams-create>
+      </app-smui-admin-team-create>
 
       <app-smui-admin-teams-list
         (showSuccessMsg)="showSuccessMsg($event)"
@@ -26,12 +26,12 @@
   <li ngbNavItem *ngIf="isAdminUser">
     <a ngbNavLink>Users</a>
     <ng-template ngbNavContent>
-      <app-smui-admin-users-create
+      <app-smui-admin-user-create
         (showSuccessMsg)="showSuccessMsg($event)"
         (showErrorMsg)="showErrorMsg($event)"
         (usersChange)="usersChange()"
       >
-      </app-smui-admin-users-create>
+      </app-smui-admin-user-create>
 
       <app-smui-admin-users-list
         (showSuccessMsg)="showSuccessMsg($event)"

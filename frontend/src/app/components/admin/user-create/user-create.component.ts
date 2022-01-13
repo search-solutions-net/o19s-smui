@@ -15,10 +15,10 @@ import {
 } from '../../../services';
 
 @Component({
-  selector: 'app-smui-admin-users-create',
-  templateUrl: './users-create.component.html'
+  selector: 'app-smui-admin-user-create',
+  templateUrl: './user-create.component.html'
 })
-export class UsersCreateComponent implements OnInit, OnChanges {
+export class UserCreateComponent implements OnInit, OnChanges {
 
   @Output() showErrorMsg: EventEmitter<string> = new EventEmitter();
   @Output() showSuccessMsg: EventEmitter<string> = new EventEmitter();
@@ -26,13 +26,16 @@ export class UsersCreateComponent implements OnInit, OnChanges {
   @Output() emailChange: EventEmitter<string> = new EventEmitter();
   @Output() passwordChange: EventEmitter<string> = new EventEmitter();
   @Output() adminChange: EventEmitter<string> = new EventEmitter();
+  @Output() passwordChangeRequiredChange: EventEmitter<string> = new EventEmitter();
   @Output() usersChange: EventEmitter<string> = new EventEmitter();
 
   solrIndices: SolrIndex[];
+
   name: string;
   email: string;
   password: string;
   admin: boolean;
+  passwordChangeRequired: boolean = true;
 
   constructor(
     private userService: UserService,
@@ -53,6 +56,7 @@ export class UsersCreateComponent implements OnInit, OnChanges {
     this.email = '';
     this.password = '';
     this.admin = false;
+    this.passwordChangeRequired = true;
   }
 
   createUser(event: Event){
@@ -61,7 +65,7 @@ export class UsersCreateComponent implements OnInit, OnChanges {
       this.admin = false;
     }
     if (this.name && this.email && this.password) {
-      this.userService.createUser(this.name, this.email, this.password, this.admin)
+      this.userService.createUser(this.name, this.email, this.password, this.admin, this.passwordChangeRequired)
         .then(() => this.usersChange.emit())
         .then(() => this.showSuccessMsg.emit("Created new User " + this.email))
         .then(() => this.clearForm())

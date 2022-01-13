@@ -71,8 +71,8 @@ export class UserService {
       .toPromise();
   }
 
-  createUser(name: string, email: string, password: string, admin: boolean): Promise<User> {
-    const body = JSON.stringify( { name: name, email: email, password: password, admin:admin });
+  createUser(name: string, email: string, password: string, admin: boolean, passwordChangeRequired: boolean | null): Promise<User> {
+    const body = JSON.stringify( { name: name, email: email, password: password, admin:admin, passwordChangeRequired: passwordChangeRequired});
     return this.http
       .put<User>(`${this.baseUrl}/${this.userApiPath}`, body, httpOptions)
       .toPromise();

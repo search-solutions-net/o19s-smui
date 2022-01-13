@@ -58,6 +58,19 @@
         />
       </div>
     </div>
+    <div class="form-group row">
+      <label for="passwordChangeRequired" class="col-sm-2 col-form-label">Password change required?</label>
+      <div class="col-sm-1">
+        <input
+          type="checkbox"
+          class="form-control"
+          id="passwordChangeRequired"
+          [(ngModel)]="passwordChangeRequired"
+          (ngModelChange)="passwordChangeRequiredChange.emit($event)"
+          (keyup.enter)="createUser($event)"
+        />
+      </div>
+    </div>
 
     <div class="form-group row">
       <div class="col-sm-10">
