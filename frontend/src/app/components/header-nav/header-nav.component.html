@@ -7,21 +7,7 @@
       (v{{ featureToggleService.getSync('smui.version') }})
     </span>
     <ng-container *ngIf="versionInfo">
-      <ng-container *ngIf="versionInfo.infoType === 'INFO'">
-        <i class="fa fa-check-circle" [title]="versionInfo.msgHtml"></i>
-      </ng-container>
-      <ng-container *ngIf="versionInfo.infoType !== 'INFO'">
-        <button
-          class="btn btn-sm btn-smui-version-info"
-          [ngClass]="{
-            'btn-warning': versionInfo.infoType === 'WARN',
-            'btn-danger': versionInfo.infoType === 'ERROR'
-          }"
-          (click)="modalService.open('versionInfoModalModal')"
-        >
-          <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
-        </button>
-      </ng-container>
+         <i class="fa fa-check-circle" [title]="versionInfo.msgHtml"></i>
     </ng-container>
   </span>
 
