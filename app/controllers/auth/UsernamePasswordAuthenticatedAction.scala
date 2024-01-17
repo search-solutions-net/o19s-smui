@@ -1,8 +1,8 @@
 package controllers.auth
 
-import models.{SearchManagementRepository, SessionDAO}
-import play.api.{Configuration, Logging}
+import models.{SearchManagementRepository, Session, SessionDAO}
 import play.api.mvc._
+import play.api.{Configuration, Logging}
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,23 +28,18 @@ class UsernamePasswordAuthenticatedAction (adminRequired: Boolean, searchManagem
       "^/.*.css$"
     )
 
-  def requestAuthenticated(session: Session): Boolean = {
-
-    val sessionTokenOpt = session.get("sessionToken")
-
-    val user = sessionTokenOpt
-      .flatMap(token => SessionDAO.getSession(token))
-      .filter(_.expiration.isAfter(LocalDateTime.now(ZoneOffset.UTC)))
-      .map(_.tokenData)
-      .flatMap(searchManagementRepository.lookupUserByEmail)
-
+  def requestAuthenticated(sessionOpt: Option[Session]): Boolean = {
+    if (sessionOpt.isEmpty
+      || sessionOpt.get.expiration.isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
+      return false
+    }
+    val user = searchManagementRepository.lookupUserByEmail(sessionOpt.get.tokenData)
     user match {
       case None => false
       case Some(user) => (!adminRequired || user.admin)
       case _ => false
     }
   }
-
 
   /**
    * Helper method to verify, that the request is basic authenticated with configured user/pass.
@@ -56,13 +51,18 @@ class UsernamePasswordAuthenticatedAction (adminRequired: Boolean, searchManagem
   override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
     logger.debug(s":: invokeBlock :: request.path = ${request.path}")
     val sessionTokenOpt = request.session.get("sessionToken")
-    if (requestAuthenticated(request.session)
+    val sessionOpt = SessionDAO.getSession(sessionTokenOpt.getOrElse("##"))
+    val isRequestAuthenticated = requestAuthenticated(sessionOpt)
+    if (isRequestAuthenticated
       || (request.method.equals("GET")
         && whiteListedGetPathRegexes.toStream.filter(s => request.path.matches(s)).headOption.nonEmpty)
       || (request.method.equals("PUT")
         && whiteListedPutPathRegexes.toStream.filter(s => request.path.matches(s)).headOption.nonEmpty)
         ) {
       logger.debug("Request authed for: " + request.path + " (token = " + sessionTokenOpt + ")")
+      if (isRequestAuthenticated) {
+        sessionOpt.exists(session => SessionDAO.resetSession(session))
+      }
       block(request)
     } else {
       logger.info("lets take you to the session_reset screen from " + request.path + " (" + sessionTokenOpt + ")")

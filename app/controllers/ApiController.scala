@@ -1,32 +1,28 @@
 package controllers
 
-import java.io.{OutputStream, PipedInputStream, PipedOutputStream}
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
-
-import javax.inject.Inject
-import play.api.Logging
-import play.api.mvc._
-import play.api.libs.json._
-import play.api.libs.json.Reads._
-
-import java.nio.file.Paths
-import java.time.format.DateTimeFormatter
-import java.time.LocalDateTime
-import scala.concurrent.{ExecutionContext, Future}
-import controllers.auth.{AuthActionFactory, UserRequest}
-import controllers.auth.UsernamePasswordAuthenticatedAction
+import controllers.auth.{AuthActionFactory, UserRequest, UsernamePasswordAuthenticatedAction}
 import models.FeatureToggleModel.FeatureToggleService
 import models._
 import models.config.SmuiVersion
-import models.input.{InputTagId, InputValidator, ListItem, SearchInputId, SearchInputWithRules}
+import models.input._
 import models.querqy.QuerqyRulesTxtGenerator
 import models.spellings.{CanonicalSpellingId, CanonicalSpellingValidator, CanonicalSpellingWithAlternatives}
-import play.api.Configuration
 import org.checkerframework.checker.units.qual.A
+import play.api.{Configuration, Logging}
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+import play.api.mvc._
 import services.{RulesTxtDeploymentService, RulesTxtImportService}
 
+import java.io.{OutputStream, PipedInputStream, PipedOutputStream}
+import java.nio.file.Paths
 import java.sql.SQLIntegrityConstraintViolationException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
 
 
 // TODO Make ApiController pure REST- / JSON-Controller to ensure all implicit Framework responses (e.g. 400, 500) conformity
@@ -381,7 +377,8 @@ class ApiController @Inject()(authActionFactory: AuthActionFactory,
         val email = (json \ "email").as[String]
         val password = (json \ "password").as[String]
         if (searchManagementRepository.isValidEmailPasswordCombo(email, password)) {
-          Ok(Json.toJson(ApiResult(API_RESULT_OK, email + " signed on", None))).withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(email)))
+          Ok(Json.toJson(ApiResult(API_RESULT_OK, email + " signed on", None)))
+            .withSession(request.session + ("sessionToken" -> SessionDAO.generateToken(email, featureToggleService.getAuthTimeout)))
         } else {
           Unauthorized(Json.toJson(getAuthInfoInternal(request)))
         }

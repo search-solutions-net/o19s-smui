@@ -1,12 +1,12 @@
 package models
 
-import javax.inject.Inject
-import play.api.libs.json.{JsValue, Json, OFormat, OWrites, Writes}
+import models.rules.UpDownRule
+import play.api.libs.json.{Json, OFormat, OWrites, Writes}
 import play.api.{Configuration, Logging}
 import play.twirl.api.utils.StringEscapeUtils
 
+import javax.inject.Inject
 import scala.util.Try
-import models.rules.UpDownRule
 
 // TODO refactor FeatureToggleModel (and FeatureToggleService) to config package (for being in sync with Spec structure)
 package object FeatureToggleModel extends Logging {
@@ -56,6 +56,7 @@ package object FeatureToggleModel extends Logging {
     private val FEATURE_TOGGLE_HEADLINE = "toggle.headline"
     private val ACTIVATE_RULE_TAGGING = "toggle.rule-tagging"
     private val PREDEFINED_TAGS_FILE = "toggle.predefined-tags-file"
+    private val SMUI_AUTH_TIMEOUT = "smui.auth.timeout"
     private val SMUI_AUTH_SIMPLE_LOGOUT = "smui.auth.ui-concept.simple-logout-button-target-url"
     private val SMUI_VERSION = "smui.version"
     private val FEATURE_TOGGLE_ACTIVATE_SPELLING = "toggle.activate-spelling"
@@ -219,7 +220,9 @@ package object FeatureToggleModel extends Logging {
       appConfig.getOptional[String](FEATURE_TOGGLE_HEADLINE).getOrElse("Search Management UI")
     }
 
-
+    def getAuthTimeout: Long = {
+      appConfig.getOptional[Long](SMUI_AUTH_TIMEOUT).getOrElse(60L)
+    }
 
   }
 
